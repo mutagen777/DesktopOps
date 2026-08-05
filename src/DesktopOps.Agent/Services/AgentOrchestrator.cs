@@ -8,28 +8,37 @@ public sealed class AgentOrchestrator
 {
     private readonly IUpdateService _updateService;
     private readonly ProgramInstallService _installService;
+    private readonly AgentSelfUpdateService _selfUpdate;
     private readonly IDiagnosticsService _diagnostics;
     private readonly ILogger<AgentOrchestrator> _logger;
     private readonly TimeSpan _pollInterval;
+    private readonly bool _allowSelfUpdate;
     private readonly object _sync = new();
     private List<ProgramUpdateCandidate> _pending = [];
     private PeriodicTimer? _timer;
     private CancellationTokenSource? _cts;
     private Task? _pollLoop;
+    private bool _restartScheduled;
 
     public AgentOrchestrator(
         IUpdateService updateService,
         ProgramInstallService installService,
+        AgentSelfUpdateService selfUpdate,
         IDiagnosticsService diagnostics,
         ILogger<AgentOrchestrator> logger,
-        TimeSpan pollInterval)
+        TimeSpan pollInterval,
+        bool allowSelfUpdate = true)
     {
         _updateService = updateService;
         _installService = installService;
+        _selfUpdate = selfUpdate;
         _diagnostics = diagnostics;
         _logger = logger;
         _pollInterval = pollInterval;
+        _allowSelfUpdate = allowSelfUpdate;
     }
+
+    public bool RestartScheduled => _restartScheduled;
 
     public IReadOnlyList<ProgramUpdateCandidate> PendingUpdates
     {
@@ -77,6 +86,9 @@ public sealed class AgentOrchestrator
             await _updateService.RegisterClientAsync(cancellationToken);
             var assignments = await _updateService.GetAssignmentsAsync(cancellationToken);
             var candidates = _installService.GetUpdateCandidates(assignments)
+                .Select(NormalizeCandidate)
+                .Where(static item => item is not null)
+                .Cast<ProgramUpdateCandidate>()
                 .Where(item => item.Action is ProgramUpdateAction.Add or ProgramUpdateAction.Update or ProgramUpdateAction.Delete)
                 .ToList();
 
@@ -109,6 +121,30 @@ public sealed class AgentOrchestrator
         {
             try
             {
+                if (AgentSelfUpdateService.IsAgentProgram(candidate.Program.Slug))
+                {
+                    if (!_allowSelfUpdate)
+                    {
+                        _logger.LogInformation("Agent self-update disabled by configuration.");
+                        continue;
+                    }
+
+                    if (candidate.Program.LatestRelease is null)
+                    {
+                        continue;
+                    }
+
+                    var scheduled = await _selfUpdate.TryScheduleSelfUpdateAsync(candidate.Program, cancellationToken);
+                    if (scheduled)
+                    {
+                        installedCount++;
+                        _restartScheduled = true;
+                        break;
+                    }
+
+                    continue;
+                }
+
                 if (candidate.Action == ProgramUpdateAction.Delete)
                 {
                     _installService.RemoveProgram(candidate.Program.Slug);
@@ -167,13 +203,54 @@ public sealed class AgentOrchestrator
             }
         }
 
-        await SearchUpdatesAsync(cancellationToken);
+        if (!_restartScheduled)
+        {
+            await SearchUpdatesAsync(cancellationToken);
+        }
+
         return installedCount;
     }
 
     public Task<string> ExportDiagnosticsAsync(CancellationToken cancellationToken = default)
     {
         return _diagnostics.ExportDiagnosticsAsync(cancellationToken);
+    }
+
+    private ProgramUpdateCandidate? NormalizeCandidate(ProgramUpdateCandidate candidate)
+    {
+        if (!AgentSelfUpdateService.IsAgentProgram(candidate.Program.Slug))
+        {
+            return candidate;
+        }
+
+        // Never remove the agent via the normal uninstall path.
+        if (candidate.Action == ProgramUpdateAction.Delete)
+        {
+            return null;
+        }
+
+        if (candidate.Program.LatestRelease is null)
+        {
+            return null;
+        }
+
+        if (!Version.TryParse(candidate.Program.LatestRelease.Version, out var remoteVersion))
+        {
+            return null;
+        }
+
+        var localVersion = _updateService.Options.CurrentVersion;
+        if (remoteVersion <= localVersion)
+        {
+            return null;
+        }
+
+        return new ProgramUpdateCandidate
+        {
+            Program = candidate.Program,
+            Action = ProgramUpdateAction.Update,
+            InstalledVersion = localVersion.ToString()
+        };
     }
 
     private async Task PollLoopAsync(CancellationToken cancellationToken)

@@ -10,6 +10,7 @@
     <ApplicationIcon />
     <RootNamespace>DesktopOps.Agent</RootNamespace>
     <AssemblyName>DesktopOps.Agent</AssemblyName>
+    <Version>0.3.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

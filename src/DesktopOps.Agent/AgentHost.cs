@@ -32,6 +32,8 @@ internal sealed class AgentHost : IDisposable
                     ? Environment.UserName
                     : agentSection["UserName"]!;
                 var pollMinutes = int.TryParse(agentSection["PollIntervalMinutes"], out var minutes) ? minutes : 30;
+                var allowSelfUpdate = !bool.TryParse(agentSection["AllowSelfUpdate"], out var selfUpdate)
+                    || selfUpdate;
 
                 var updateOptions = new UpdateOptions
                 {
@@ -40,7 +42,8 @@ internal sealed class AgentHost : IDisposable
                     UserName = userName,
                     MachineName = Environment.MachineName,
                     InstallationDirectory = installDir,
-                    CurrentVersion = typeof(AgentHost).Assembly.GetName().Version ?? new Version(0, 3, 0)
+                    CurrentVersion = typeof(AgentHost).Assembly.GetName().Version ?? new Version(0, 3, 0),
+                    ApiKey = agentSection["ApiKey"]
                 };
 
                 var diagnosticsOptions = new DiagnosticsOptions
@@ -65,12 +68,28 @@ internal sealed class AgentHost : IDisposable
                         builder.SetMinimumLevel(LogLevel.Information);
                     });
 
+                    return new AgentSelfUpdateService(
+                        sp.GetRequiredService<UpdateService>(),
+                        loggerFactory.CreateLogger<AgentSelfUpdateService>());
+                });
+                services.AddSingleton(sp =>
+                {
+                    var diagnostics = sp.GetRequiredService<IDiagnosticsService>();
+                    var loggerFactory = LoggerFactory.Create(builder =>
+                    {
+                        builder.AddProvider(diagnostics.CreateLoggerProvider());
+                        builder.AddDebug();
+                        builder.SetMinimumLevel(LogLevel.Information);
+                    });
+
                     return new AgentOrchestrator(
                         sp.GetRequiredService<IUpdateService>(),
                         sp.GetRequiredService<ProgramInstallService>(),
+                        sp.GetRequiredService<AgentSelfUpdateService>(),
                         diagnostics,
                         loggerFactory.CreateLogger<AgentOrchestrator>(),
-                        TimeSpan.FromMinutes(pollMinutes));
+                        TimeSpan.FromMinutes(pollMinutes),
+                        allowSelfUpdate);
                 });
             })
             .ConfigureLogging(logging =>

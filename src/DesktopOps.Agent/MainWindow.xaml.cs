@@ -56,6 +56,17 @@ public partial class MainWindow : Window
         }
 
         var installed = await Orchestrator.InstallPendingAsync();
+        if (Orchestrator.RestartScheduled)
+        {
+            TrayIcon.ShowBalloonTip(
+                "DesktopOps",
+                "Agent update staged. Restarting…",
+                Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+            TrayIcon.Dispose();
+            System.Windows.Application.Current.Shutdown();
+            return;
+        }
+
         TrayIcon.ShowBalloonTip(
             "DesktopOps",
             installed == 0 ? "No pending updates." : $"Installed {installed} update(s).",
