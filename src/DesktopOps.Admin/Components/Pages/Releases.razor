@@ -1,0 +1,155 @@
+@page "/releases"
+@rendermode InteractiveServer
+@inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+@inject PackageStorageService PackageStorage
+
+<PageTitle>Releases</PageTitle>
+
+<h1>Releases</h1>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <label class="form-label">Program</label>
+        <InputSelect class="form-select" @bind-Value="selectedProgramId">
+            <option value="">Select program</option>
+            @foreach (var program in programs)
+            {
+                <option value="@program.Id">@program.Name</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Version</label>
+        <InputText class="form-control" @bind-Value="version" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Package (ZIP)</label>
+        <InputFile OnChange="OnFileSelected" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Release notes</label>
+        <InputText class="form-control" @bind-Value="releaseNotes" />
+    </div>
+</div>
+<div class="mb-3">
+    <InputCheckbox @bind-Value="isMandatory" /> Mandatory update
+</div>
+<button class="btn btn-primary" @onclick="CreateReleaseAsync">Upload release</button>
+
+<table class="table mt-4">
+    <thead>
+        <tr>
+            <th>Program</th>
+            <th>Version</th>
+            <th>SHA-256</th>
+            <th>Size</th>
+            <th>Published</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var release in releases)
+        {
+            <tr>
+                <td>@release.Program?.Name</td>
+                <td>@release.Version</td>
+                <td><code class="small">@(string.IsNullOrEmpty(release.PackageHash) ? "-" : release.PackageHash[..Math.Min(12, release.PackageHash.Length)])…</code></td>
+                <td>@FormatSize(release.PackageSize)</td>
+                <td>@(release.PublishedAtUtc?.ToString("u") ?? "draft")</td>
+                <td>
+                    @if (release.PublishedAtUtc is null)
+                    {
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => PublishAsync(release.Id)">Publish</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private IBrowserFile? packageFile;
+    private List<ManagedProgram> programs = [];
+    private List<ReleasePackage> releases = [];
+    private string? releaseNotes;
+    private Guid? selectedProgramId;
+    private bool isMandatory;
+    private string version = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs args)
+    {
+        packageFile = args.File;
+    }
+
+    private async Task CreateReleaseAsync()
+    {
+        if (selectedProgramId is null || packageFile is null || string.IsNullOrWhiteSpace(version))
+        {
+            return;
+        }
+
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var program = await dbContext.Programs.FirstAsync(item => item.Id == selectedProgramId.Value);
+
+        await using var stream = packageFile.OpenReadStream(maxAllowedSize: 200 * 1024 * 1024);
+        var stored = await PackageStorage.SavePackageAsync(program.Slug, version, packageFile.Name, stream);
+
+        dbContext.ReleasePackages.Add(new ReleasePackage
+        {
+            ProgramId = program.Id,
+            Version = version.Trim(),
+            OriginalFileName = packageFile.Name,
+            PackagePath = stored.RelativePath,
+            PackageHash = stored.Sha256Hash,
+            PackageSize = stored.SizeBytes,
+            ReleaseNotes = releaseNotes?.Trim(),
+            IsMandatory = isMandatory
+        });
+
+        await dbContext.SaveChangesAsync();
+        packageFile = null;
+        releaseNotes = string.Empty;
+        version = string.Empty;
+        isMandatory = false;
+        await LoadAsync();
+    }
+
+    private async Task PublishAsync(Guid releaseId)
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var release = await dbContext.ReleasePackages.FirstAsync(item => item.Id == releaseId);
+        release.PublishedAtUtc = DateTimeOffset.UtcNow;
+        await dbContext.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        programs = await dbContext.Programs.OrderBy(static item => item.Name).ToListAsync();
+        releases = await dbContext.ReleasePackages
+            .Include(static item => item.Program)
+            .OrderByDescending(static item => item.CreatedAtUtc)
+            .ToListAsync();
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 1024)
+        {
+            return $"{bytes} B";
+        }
+
+        if (bytes < 1024 * 1024)
+        {
+            return $"{bytes / 1024.0:0.#} KB";
+        }
+
+        return $"{bytes / (1024.0 * 1024.0):0.##} MB";
+    }
+}

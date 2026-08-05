@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/DesktopOps.Sample.Wpf/DesktopOps.Sample.Wpf.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/DesktopOps.Admin/DesktopOps.Admin.csproj" />
+    <Project Path="src/DesktopOps.Agent/DesktopOps.Agent.csproj" />
+    <Project Path="src/DesktopOps.Diagnostics/DesktopOps.Diagnostics.csproj" />
+    <Project Path="src/DesktopOps.Server.Data/DesktopOps.Server.Data.csproj" />
+    <Project Path="src/DesktopOps.Server/DesktopOps.Server.csproj" />
+    <Project Path="src/DesktopOps.Updates/DesktopOps.Updates.csproj" />
+    <Project Path="src/DesktopOps.Wpf/DesktopOps.Wpf.csproj" />
+  </Folder>
+</Solution>

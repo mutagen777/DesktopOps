@@ -1,0 +1,83 @@
+﻿<Window x:Class="DesktopOps.Sample.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="DesktopOps Sample"
+        Height="520"
+        Width="920"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock FontSize="28" FontWeight="SemiBold" Text="DesktopOps Sample" />
+            <TextBlock Margin="0,4,0,0"
+                       Foreground="DimGray"
+                       Text="WPF demo for diagnostics export, exception capture, and server-driven update checks." />
+        </StackPanel>
+
+        <Border Grid.Row="1"
+                Padding="16"
+                Margin="0,0,0,12"
+                CornerRadius="8"
+                Background="#FFF7F7F7"
+                BorderBrush="#FFE0E0E0"
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Diagnostics" />
+                    <TextBlock Margin="0,8,0,0" Text="{Binding DiagnosticsDirectoryLabel}" TextWrapping="Wrap" />
+                    <TextBlock Margin="0,6,0,0" Text="{Binding ExportPathLabel}" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1">
+                    <TextBlock FontWeight="SemiBold" Text="Updates" />
+                    <TextBlock Margin="0,8,0,0" Text="{Binding CurrentVersionLabel}" />
+                    <TextBlock Margin="0,6,0,0" Text="{Binding UpdateStatusLabel}" TextWrapping="Wrap" />
+                    <TextBlock Margin="0,6,0,0" Text="{Binding PackagePathLabel}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <WrapPanel Grid.Row="2" Margin="0,0,0,12">
+            <Button Margin="0,0,8,8"
+                    Padding="14,8"
+                    Click="ExportDiagnostics_Click"
+                    Content="Export diagnostics zip" />
+            <Button Margin="0,0,8,8"
+                    Padding="14,8"
+                    Click="CheckForUpdates_Click"
+                    Content="Check for updates" />
+            <Button Margin="0,0,8,8"
+                    Padding="14,8"
+                    Click="DownloadUpdate_Click"
+                    Content="Download update package" />
+            <Button Margin="0,0,8,8"
+                    Padding="14,8"
+                    Click="ThrowHandledException_Click"
+                    Content="Capture handled exception" />
+            <Button Margin="0,0,8,8"
+                    Padding="14,8"
+                    Click="ThrowBackgroundException_Click"
+                    Content="Throw background exception" />
+        </WrapPanel>
+
+        <TextBox Grid.Row="3"
+                 IsReadOnly="True"
+                 VerticalScrollBarVisibility="Auto"
+                 Text="{Binding ActivityLog, Mode=OneWay}"
+                 TextWrapping="Wrap" />
+    </Grid>
+</Window>

@@ -1,0 +1,94 @@
+@page "/assignments"
+@rendermode InteractiveServer
+@inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+
+<PageTitle>Assignments</PageTitle>
+
+<h1>Assignments</h1>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-5">
+        <label class="form-label">Program</label>
+        <InputSelect class="form-select" @bind-Value="selectedProgramId">
+            <option value="">Select program</option>
+            @foreach (var program in programs)
+            {
+                <option value="@program.Id">@program.Name</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="col-md-5">
+        <label class="form-label">Group</label>
+        <InputSelect class="form-select" @bind-Value="selectedGroupId">
+            <option value="">Select group</option>
+            @foreach (var group in groups)
+            {
+                <option value="@group.Id">@group.Name</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" @onclick="CreateAssignmentAsync">Assign</button>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Program</th>
+            <th>Group</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var assignment in assignments)
+        {
+            <tr>
+                <td>@assignment.Program?.Name</td>
+                <td>@assignment.UserGroup?.Name</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<ProgramAssignment> assignments = [];
+    private List<UserGroup> groups = [];
+    private List<ManagedProgram> programs = [];
+    private Guid? selectedGroupId;
+    private Guid? selectedProgramId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task CreateAssignmentAsync()
+    {
+        if (selectedProgramId is null || selectedGroupId is null)
+        {
+            return;
+        }
+
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        dbContext.ProgramAssignments.Add(new ProgramAssignment
+        {
+            ProgramId = selectedProgramId.Value,
+            UserGroupId = selectedGroupId.Value
+        });
+
+        await dbContext.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        programs = await dbContext.Programs.OrderBy(static item => item.Name).ToListAsync();
+        groups = await dbContext.UserGroups.OrderBy(static item => item.Name).ToListAsync();
+        assignments = await dbContext.ProgramAssignments
+            .Include(static item => item.Program)
+            .Include(static item => item.UserGroup)
+            .OrderBy(item => item.Program!.Name)
+            .ToListAsync();
+    }
+}

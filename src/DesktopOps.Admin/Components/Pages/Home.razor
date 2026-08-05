@@ -1,0 +1,51 @@
+﻿@page "/"
+@inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+
+<PageTitle>Dashboard</PageTitle>
+
+<h1>DesktopOps Admin</h1>
+
+<p>Self-hosted deployment dashboard for programs, groups, assignments, releases, and rollouts.</p>
+
+<div class="row g-3">
+    <div class="col-md-3">
+        <div class="border rounded p-3">
+            <div class="text-muted">Programs</div>
+            <div class="fs-2">@programCount</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="border rounded p-3">
+            <div class="text-muted">Groups</div>
+            <div class="fs-2">@groupCount</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="border rounded p-3">
+            <div class="text-muted">Assignments</div>
+            <div class="fs-2">@assignmentCount</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="border rounded p-3">
+            <div class="text-muted">Published releases</div>
+            <div class="fs-2">@publishedReleaseCount</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int assignmentCount;
+    private int groupCount;
+    private int programCount;
+    private int publishedReleaseCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        programCount = await dbContext.Programs.CountAsync();
+        groupCount = await dbContext.UserGroups.CountAsync();
+        assignmentCount = await dbContext.ProgramAssignments.CountAsync();
+        publishedReleaseCount = await dbContext.ReleasePackages.CountAsync(item => item.PublishedAtUtc != null);
+    }
+}

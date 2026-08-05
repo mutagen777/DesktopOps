@@ -1,0 +1,57 @@
+@page "/rollouts"
+@rendermode InteractiveServer
+@inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+
+<PageTitle>Rollouts</PageTitle>
+
+<h1>Rollout status</h1>
+<p class="text-muted">Recent deployment events reported by agents and embedded clients.</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Time (UTC)</th>
+            <th>User</th>
+            <th>Machine</th>
+            <th>Program</th>
+            <th>Version</th>
+            <th>Status</th>
+            <th>Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in events)
+        {
+            <tr>
+                <td>@item.TimestampUtc.ToString("u")</td>
+                <td>@item.ClientRegistration?.UserName</td>
+                <td>@item.ClientRegistration?.MachineName</td>
+                <td>@item.ReleasePackage?.Program?.Name</td>
+                <td>@item.ReleasePackage?.Version</td>
+                <td>@item.Status</td>
+                <td>@item.Message</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (events.Count == 0)
+{
+    <p>No deployment events yet.</p>
+}
+
+@code {
+    private List<DeploymentEvent> events = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        events = await dbContext.DeploymentEvents
+            .Include(static item => item.ClientRegistration)
+            .Include(static item => item.ReleasePackage!)
+                .ThenInclude(static item => item.Program)
+            .OrderByDescending(static item => item.TimestampUtc)
+            .Take(200)
+            .ToListAsync();
+    }
+}

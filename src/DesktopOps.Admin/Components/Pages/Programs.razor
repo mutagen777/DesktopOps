@@ -1,0 +1,89 @@
+@page "/programs"
+@rendermode InteractiveServer
+@inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+
+<PageTitle>Programs</PageTitle>
+
+<h1>Programs</h1>
+
+<EditForm Model="model" OnValidSubmit="CreateProgramAsync">
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label class="form-label">Name</label>
+            <InputText class="form-control" @bind-Value="model.Name" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Slug</label>
+            <InputText class="form-control" @bind-Value="model.Slug" />
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Description</label>
+            <InputText class="form-control" @bind-Value="model.Description" />
+        </div>
+    </div>
+    <button class="btn btn-primary" type="submit">Add program</button>
+</EditForm>
+
+<table class="table mt-4">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Slug</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var program in programs)
+        {
+            <tr>
+                <td>@program.Name</td>
+                <td>@program.Slug</td>
+                <td>@program.Description</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private readonly ProgramInput model = new();
+    private List<ManagedProgram> programs = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task CreateProgramAsync()
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        dbContext.Programs.Add(new ManagedProgram
+        {
+            Name = model.Name.Trim(),
+            Slug = model.Slug.Trim().ToLowerInvariant(),
+            Description = model.Description?.Trim()
+        });
+
+        await dbContext.SaveChangesAsync();
+        model.Name = string.Empty;
+        model.Slug = string.Empty;
+        model.Description = string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        programs = await dbContext.Programs
+            .OrderBy(static item => item.Name)
+            .ToListAsync();
+    }
+
+    private sealed class ProgramInput
+    {
+        public string Name { get; set; } = string.Empty;
+
+        public string Slug { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+    }
+}

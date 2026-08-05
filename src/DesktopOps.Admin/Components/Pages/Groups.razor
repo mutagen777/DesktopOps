@@ -1,0 +1,120 @@
+@page "/groups"
+@rendermode InteractiveServer
+@inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+
+<PageTitle>Groups</PageTitle>
+
+<h1>Groups</h1>
+
+<EditForm Model="newGroup" OnValidSubmit="CreateGroupAsync">
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Group name</label>
+            <InputText class="form-control" @bind-Value="newGroup.Name" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Description</label>
+            <InputText class="form-control" @bind-Value="newGroup.Description" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Users (comma separated)</label>
+            <InputText class="form-control" @bind-Value="newGroup.UserNames" />
+        </div>
+    </div>
+    <button class="btn btn-primary" type="submit">Add group</button>
+</EditForm>
+
+@foreach (var group in groups)
+{
+    <div class="border rounded p-3 mt-4">
+        <h5>@group.Name</h5>
+        <div class="text-muted mb-2">@group.Description</div>
+        <div class="mb-2">
+            <strong>Members:</strong>
+            @string.Join(", ", group.Members.Select(static item => item.UserName))
+        </div>
+        <div class="row g-2">
+            <div class="col-md-4">
+                <InputText class="form-control" @bind-Value="pendingMembers[group.Id]" placeholder="Add username" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary" @onclick="() => AddMemberAsync(group.Id)">Add user</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly Dictionary<Guid, string> pendingMembers = [];
+    private readonly GroupInput newGroup = new();
+    private List<UserGroup> groups = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task CreateGroupAsync()
+    {
+        var members = newGroup.UserNames
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(static userName => new UserGroupMember { UserName = userName })
+            .ToList();
+
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        dbContext.UserGroups.Add(new UserGroup
+        {
+            Name = newGroup.Name.Trim(),
+            Description = newGroup.Description?.Trim(),
+            Members = members
+        });
+
+        await dbContext.SaveChangesAsync();
+        newGroup.Name = string.Empty;
+        newGroup.Description = string.Empty;
+        newGroup.UserNames = string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task AddMemberAsync(Guid groupId)
+    {
+        if (!pendingMembers.TryGetValue(groupId, out var userName) || string.IsNullOrWhiteSpace(userName))
+        {
+            return;
+        }
+
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        dbContext.UserGroupMembers.Add(new UserGroupMember
+        {
+            UserGroupId = groupId,
+            UserName = userName.Trim()
+        });
+
+        await dbContext.SaveChangesAsync();
+        pendingMembers[groupId] = string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        groups = await dbContext.UserGroups
+            .Include(static item => item.Members)
+            .OrderBy(static item => item.Name)
+            .ToListAsync();
+
+        foreach (var group in groups)
+        {
+            pendingMembers.TryAdd(group.Id, string.Empty);
+        }
+    }
+
+    private sealed class GroupInput
+    {
+        public string Name { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
+        public string UserNames { get; set; } = string.Empty;
+    }
+}

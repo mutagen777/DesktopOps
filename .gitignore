@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+TestResults/
+artifacts/
+*.user
+*.suo
+*.cache
+*.db
+*.db-shm
+*.db-wal
+storage/
+.demo/
+appsettings.Development.json

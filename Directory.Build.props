@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Authors>DesktopOps</Authors>
+    <Company>DesktopOps</Company>
+    <Product>DesktopOps</Product>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+</Project>
