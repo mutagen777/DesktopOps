@@ -6,7 +6,7 @@
 
 <PageTitle>Releases</PageTitle>
 
-<p class="page-lead">ZIP hochladen und veröffentlichen – zugewiesene Agents können es dann installieren.</p>
+<p class="page-lead">ZIP hochladen und veröffentlichen. Mit Rollout-% nur einen Teil der zugewiesenen Benutzer freischalten.</p>
 
 <div class="panel">
     <div class="panel-title">Release hochladen</div>
@@ -33,6 +33,10 @@
             <label class="form-label">Release Notes</label>
             <InputText class="form-control" @bind-Value="releaseNotes" />
         </div>
+        <div class="col-md-2">
+            <label class="form-label">Rollout %</label>
+            <InputNumber class="form-control" @bind-Value="rolloutPercent" min="0" max="100" />
+        </div>
     </div>
     <div class="mb-3">
         <InputCheckbox @bind-Value="isMandatory" /> Pflicht-Update
@@ -48,6 +52,7 @@
                 <th>Version</th>
                 <th>SHA-256</th>
                 <th>Größe</th>
+                <th>Rollout</th>
                 <th>Status</th>
                 <th></th>
             </tr>
@@ -56,7 +61,7 @@
             @if (releases.Count == 0)
             {
                 <tr>
-                    <td colspan="6" class="text-muted">Noch keine Releases.</td>
+                    <td colspan="7" class="text-muted">Noch keine Releases.</td>
                 </tr>
             }
             else
@@ -68,6 +73,20 @@
                         <td>@release.Version</td>
                         <td class="hash-cell">@(string.IsNullOrEmpty(release.PackageHash) ? "—" : release.PackageHash[..Math.Min(12, release.PackageHash.Length)] + "…")</td>
                         <td>@FormatSize(release.PackageSize)</td>
+                        <td>
+                            <div class="d-flex gap-1 align-items-center">
+                                <input class="form-control form-control-sm"
+                                       style="width: 4.5rem;"
+                                       type="number"
+                                       min="0"
+                                       max="100"
+                                       value="@GetRolloutEdit(release.Id, release.RolloutPercent)"
+                                       @onchange="e => SetRolloutEdit(release.Id, e.Value?.ToString())" />
+                                <span>%</span>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        @onclick="() => SaveRolloutAsync(release.Id)">OK</button>
+                            </div>
+                        </td>
                         <td>
                             @if (release.PublishedAtUtc is null)
                             {
@@ -92,12 +111,14 @@
 </div>
 
 @code {
+    private readonly Dictionary<Guid, int> rolloutEdits = [];
     private IBrowserFile? packageFile;
     private List<ManagedProgram> programs = [];
     private List<ReleasePackage> releases = [];
     private string? releaseNotes;
     private Guid? selectedProgramId;
     private bool isMandatory;
+    private int rolloutPercent = 100;
     private string version = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -132,7 +153,8 @@
             PackageHash = stored.Sha256Hash,
             PackageSize = stored.SizeBytes,
             ReleaseNotes = releaseNotes?.Trim(),
-            IsMandatory = isMandatory
+            IsMandatory = isMandatory,
+            RolloutPercent = Math.Clamp(rolloutPercent, 0, 100)
         });
 
         await dbContext.SaveChangesAsync();
@@ -140,6 +162,7 @@
         releaseNotes = string.Empty;
         version = string.Empty;
         isMandatory = false;
+        rolloutPercent = 100;
         await LoadAsync();
     }
 
@@ -147,9 +170,36 @@
     {
         await using var dbContext = await DbFactory.CreateDbContextAsync();
         var release = await dbContext.ReleasePackages.FirstAsync(item => item.Id == releaseId);
+        if (rolloutEdits.TryGetValue(releaseId, out var percent))
+        {
+            release.RolloutPercent = Math.Clamp(percent, 0, 100);
+        }
+
         release.PublishedAtUtc = DateTimeOffset.UtcNow;
         await dbContext.SaveChangesAsync();
         await LoadAsync();
+    }
+
+    private async Task SaveRolloutAsync(Guid releaseId)
+    {
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var release = await dbContext.ReleasePackages.FirstAsync(item => item.Id == releaseId);
+        release.RolloutPercent = Math.Clamp(GetRolloutEdit(releaseId, release.RolloutPercent), 0, 100);
+        await dbContext.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private int GetRolloutEdit(Guid releaseId, int stored)
+    {
+        return rolloutEdits.TryGetValue(releaseId, out var value) ? value : stored;
+    }
+
+    private void SetRolloutEdit(Guid releaseId, string? value)
+    {
+        if (int.TryParse(value, out var parsed))
+        {
+            rolloutEdits[releaseId] = Math.Clamp(parsed, 0, 100);
+        }
     }
 
     private async Task LoadAsync()
@@ -162,6 +212,11 @@
         releases = loadedReleases
             .OrderByDescending(static item => item.CreatedAtUtc)
             .ToList();
+
+        foreach (var release in releases)
+        {
+            rolloutEdits.TryAdd(release.Id, release.RolloutPercent);
+        }
     }
 
     private static string FormatSize(long bytes)
