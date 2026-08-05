@@ -18,7 +18,8 @@ dotnet run --project src/DesktopOps.Agent/DesktopOps.Agent.csproj
     "ServerUri": "https://localhost:7022",
     "UserName": "",
     "InstallationDirectory": "",
-    "PollIntervalMinutes": 30
+    "PollIntervalMinutes": 30,
+    "ApiKey": ""
   }
 }
 ```
@@ -29,6 +30,10 @@ dotnet run --project src/DesktopOps.Agent/DesktopOps.Agent.csproj
 | `UserName` | current Windows user | Must exist in a DesktopOps group |
 | `InstallationDirectory` | `%LocalAppData%\DesktopOps\Programs` | Where ZIPs are extracted |
 | `PollIntervalMinutes` | `30` | Background search interval |
+| `ApiKey` | empty | Must match server `Security:ApiKey` when that is set |
+| `AllowSelfUpdate` | `true` | Apply published `_agent_` releases (published EXE only) |
+
+Self-update details: [Agent self-update](agent-self-update.md).
 
 ## Tray actions
 

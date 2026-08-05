@@ -55,12 +55,14 @@ Configure `src/DesktopOps.Agent/appsettings.json`:
   "Agent": {
     "ServerUri": "https://localhost:7022",
     "UserName": "alice",
-    "PollIntervalMinutes": 30
+    "PollIntervalMinutes": 30,
+    "ApiKey": ""
   }
 }
 ```
 
 `UserName` must match a group member in the admin portal. Leave empty to use `Environment.UserName`.
+Set `ApiKey` to the same value as server `Security:ApiKey` when API key auth is enabled.
 
 Tray menu: check updates, install pending updates, export diagnostics, exit.
 
@@ -76,16 +78,21 @@ Runtime = DesktopOpsWpfBootstrapper.Initialize(this, options =>
     options.Updates.CurrentVersion = new Version(1, 0, 0);
     options.Updates.ProgramSlug = "my-product";
     options.Updates.ServerUri = new Uri("https://desktopops-server.internal");
+    options.Updates.ApiKey = "change-me"; // same as server Security:ApiKey when set
 });
 ```
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Admin authentication](docs/admin-auth.md)
+- [Directory group sync](docs/directory-sync.md)
 - [Server API](docs/server-api.md)
 - [Deployment model](docs/deployment-model.md)
 - [Client update flow](docs/update-feed.md)
 - [Agent setup](docs/agent-setup.md)
+- [Agent self-update](docs/agent-self-update.md)
+- [Staged rollouts](docs/staged-rollouts.md)
 - [Support bundle](docs/support-bundle.md)
 - [Release strategy](docs/release-strategy.md)
 
@@ -101,12 +108,17 @@ Included:
 
 Not included yet:
 
-- Active Directory / Entra sync of end-user groups (agent targeting)
+- Scheduled / Entra ID (Graph) sync of end-user groups
 - Velopack / MSI installer channel
 - multi-tenant isolation
 - delta updates
 - signed packages
-- agent self-update channel
+
+Staged percentage rollouts are supported — see [Staged rollouts](docs/staged-rollouts.md).
+
+### Server API key
+
+Protect `/api/*` with a shared key (`Security:ApiKey`). See [Server API](docs/server-api.md).
 
 ### Admin authentication
 
@@ -125,7 +137,9 @@ Windows Negotiate authentication can protect the Blazor admin (same model as typ
 | Manager | `ADGroup` or `DeveloperADGroup` | Übersicht, Gruppen, Zuweisungen, Rollouts |
 | Developer | `DeveloperADGroup` | Programme, Releases |
 
-Local demo keeps `"Enabled": false` (policies always allow). The agent API on `DesktopOps.Server` stays open for clients — only the Admin UI is gated.
+Local demo keeps `"Enabled": false` (policies always allow). Protect the agent-facing API separately with `Security:ApiKey` on the server.
+
+See [Admin authentication](docs/admin-auth.md) for the enable/test checklist. With auth enabled, the Admin sidebar lists configured groups and role claims for debugging.
 
 ## Building
 

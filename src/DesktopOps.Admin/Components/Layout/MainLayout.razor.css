@@ -5,7 +5,7 @@
 }
 
 .admin-sidebar {
-    width: 220px;
+    width: 240px;
     min-height: 100vh;
     background: #4f657d;
     color: #fff;
@@ -41,6 +41,21 @@
     font-size: 0.78rem;
     color: #c5d0db;
     word-break: break-all;
+}
+
+.admin-debug-label {
+    margin-top: 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9aafc2;
+}
+
+.admin-role {
+    margin-top: 0.2rem;
+    max-height: 2.4em;
+    overflow: hidden;
 }
 
 .admin-main {

@@ -27,7 +27,9 @@ flowchart TD
 - `ClientRegistration` – agent (`ProgramSlug = _agent_`) or embedded app client
 - `DeploymentEvent` – status callbacks (`Available`, `Downloading`, `Installed`, `Failed`, `Removed`)
 
-Assignment path: **User → Group → Program → published Release**.
+Assignment path: **User → Group → Program → published Release** (match by username or Windows SID).
+
+Manual membership, SID resolve, and on-demand AD/local group import: [Directory group sync](directory-sync.md).
 
 ## Package flow
 
@@ -53,6 +55,10 @@ Per program:
 `Database:Provider` = `Sqlite` (default) or `SqlServer`.
 Connection string key: `ConnectionStrings:DesktopOps`.
 
+## Server API security
+
+Optional shared API key (`Security:ApiKey`) gates all `/api/*` calls. Empty key = open (demo). Clients send `X-DesktopOps-Key`. Details: [Server API](server-api.md).
+
 ## Admin security
 
 `DesktopOps.Admin` optionally uses Windows Negotiate authentication with two AD roles (configured under `Security`):
@@ -61,6 +67,8 @@ Connection string key: `ConnectionStrings:DesktopOps`.
 - **Developer** (`DeveloperADGroup`) – programs and release publish
 
 Set `Security:Enabled` to `true` and fill both group names for production. With `Enabled: false`, authorization policies succeed for local demos. Client-facing `DesktopOps.Server` APIs are not Windows-gated.
+
+Test steps and sidebar claim debugging: [Admin authentication](admin-auth.md).
 
 ## Decoupling principles
 

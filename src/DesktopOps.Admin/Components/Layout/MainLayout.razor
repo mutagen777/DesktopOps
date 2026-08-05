@@ -2,6 +2,7 @@
 @inject NavigationManager Navigation
 @inject SecurityOptions Security
 @inject IHttpContextAccessor HttpContextAccessor
+@using System.Security.Claims
 
 <div class="admin-shell">
     <nav class="admin-sidebar">
@@ -11,13 +12,28 @@
         <NavMenu />
         <div class="admin-version">
             <div>Admin</div>
-            @if (!string.IsNullOrWhiteSpace(CurrentUser))
-            {
-                <div class="admin-user">@CurrentUser</div>
-            }
             @if (!Security.Enabled)
             {
                 <div class="admin-user">Auth aus</div>
+            }
+            else
+            {
+                <div class="admin-user">@(CurrentUser ?? "nicht angemeldet")</div>
+                <div class="admin-debug-label">Konfig</div>
+                <div class="admin-user">M: @Security.ADGroup</div>
+                <div class="admin-user">D: @Security.DeveloperADGroup</div>
+                <div class="admin-debug-label">Rollen</div>
+                @if (RoleClaims.Count == 0)
+                {
+                    <div class="admin-user">keine Role-Claims</div>
+                }
+                else
+                {
+                    @foreach (var role in RoleClaims)
+                    {
+                        <div class="admin-user admin-role" title="@role">@role</div>
+                    }
+                }
             }
         </div>
     </nav>
@@ -41,6 +57,25 @@
 @code {
     private string? CurrentUser =>
         HttpContextAccessor.HttpContext?.User?.Identity?.Name;
+
+    private IReadOnlyList<string> RoleClaims
+    {
+        get
+        {
+            var user = HttpContextAccessor.HttpContext?.User;
+            if (user?.Identity?.IsAuthenticated != true)
+            {
+                return [];
+            }
+
+            return user.FindAll(ClaimTypes.Role)
+                .Select(static claim => claim.Value)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(static value => value, StringComparer.OrdinalIgnoreCase)
+                .Take(12)
+                .ToList();
+        }
+    }
 
     private string CurrentTitle
     {

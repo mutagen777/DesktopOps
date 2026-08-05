@@ -23,4 +23,7 @@ After entity changes, delete the local `desktopops.db` (and recreate demo data) 
 
 ## Future channels
 
-Post-MVP candidates: signed packages, staged rings, Velopack/MSI installers, and agent self-update.
+Post-MVP candidates: signed packages and Velopack/MSI installers.
+
+Staged percentage rollouts: [Staged rollouts](staged-rollouts.md).  
+Agent self-update via program slug `_agent_`: [Agent self-update](agent-self-update.md).

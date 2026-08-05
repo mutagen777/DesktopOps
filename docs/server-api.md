@@ -2,6 +2,23 @@
 
 Base URL example: `https://localhost:7022`
 
+## Authentication
+
+Optional shared API key for all `/api/*` routes:
+
+```json
+"Security": {
+  "ApiKey": "change-me",
+  "ApiKeyHeader": "X-DesktopOps-Key"
+}
+```
+
+- Empty `ApiKey` → auth disabled (local demo)
+- Clients send `X-DesktopOps-Key: <value>` (or `Authorization: ApiKey <value>`)
+- `GET /` stays open and reports `apiKeyRequired`
+
+Agent: `Agent:ApiKey` in `appsettings.json`. Embedded clients: `UpdateOptions.ApiKey`.
+
 ## Admin
 
 | Method | Path | Description |
@@ -17,7 +34,9 @@ Base URL example: `https://localhost:7022`
 | POST | `/api/releases/{id}/publish` | Publish release |
 | GET | `/api/rollouts` | Recent deployment events |
 
-Upload response includes `packageHash` (SHA-256 hex) and `packageSize`.
+Upload response includes `packageHash` (SHA-256 hex), `packageSize`, and `rolloutPercent`.
+
+Staged rollout details: [Staged rollouts](staged-rollouts.md).
 
 ## Client / agent
 
