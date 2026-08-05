@@ -2,53 +2,67 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 
-<PageTitle>Assignments</PageTitle>
+<PageTitle>Zuweisungen</PageTitle>
 
-<h1>Assignments</h1>
+<p class="page-lead">Programm einer Gruppe zuweisen – alle Mitglieder erhalten die veröffentlichten Releases.</p>
 
-<div class="row g-3 mb-3">
-    <div class="col-md-5">
-        <label class="form-label">Program</label>
-        <InputSelect class="form-select" @bind-Value="selectedProgramId">
-            <option value="">Select program</option>
-            @foreach (var program in programs)
-            {
-                <option value="@program.Id">@program.Name</option>
-            }
-        </InputSelect>
-    </div>
-    <div class="col-md-5">
-        <label class="form-label">Group</label>
-        <InputSelect class="form-select" @bind-Value="selectedGroupId">
-            <option value="">Select group</option>
-            @foreach (var group in groups)
-            {
-                <option value="@group.Id">@group.Name</option>
-            }
-        </InputSelect>
-    </div>
-    <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-primary w-100" @onclick="CreateAssignmentAsync">Assign</button>
+<div class="panel">
+    <div class="panel-title">Zuweisung anlegen</div>
+    <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label">Programm</label>
+            <InputSelect class="form-select" @bind-Value="selectedProgramId">
+                <option value="">Programm wählen</option>
+                @foreach (var program in programs)
+                {
+                    <option value="@program.Id">@program.Name</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Gruppe</label>
+            <InputSelect class="form-select" @bind-Value="selectedGroupId">
+                <option value="">Gruppe wählen</option>
+                @foreach (var group in groups)
+                {
+                    <option value="@group.Id">@group.Name</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" @onclick="CreateAssignmentAsync">Zuweisen</button>
+        </div>
     </div>
 </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Program</th>
-            <th>Group</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var assignment in assignments)
-        {
+<div class="table-panel">
+    <table class="table">
+        <thead>
             <tr>
-                <td>@assignment.Program?.Name</td>
-                <td>@assignment.UserGroup?.Name</td>
+                <th>Programm</th>
+                <th>Gruppe</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @if (assignments.Count == 0)
+            {
+                <tr>
+                    <td colspan="2" class="text-muted">Noch keine Zuweisungen.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var assignment in assignments)
+                {
+                    <tr>
+                        <td>@assignment.Program?.Name</td>
+                        <td>@assignment.UserGroup?.Name</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
 
 @code {
     private List<ProgramAssignment> assignments = [];
@@ -70,13 +84,18 @@
         }
 
         await using var dbContext = await DbFactory.CreateDbContextAsync();
-        dbContext.ProgramAssignments.Add(new ProgramAssignment
+        var exists = await dbContext.ProgramAssignments.AnyAsync(item =>
+            item.ProgramId == selectedProgramId.Value && item.UserGroupId == selectedGroupId.Value);
+        if (!exists)
         {
-            ProgramId = selectedProgramId.Value,
-            UserGroupId = selectedGroupId.Value
-        });
+            dbContext.ProgramAssignments.Add(new ProgramAssignment
+            {
+                ProgramId = selectedProgramId.Value,
+                UserGroupId = selectedGroupId.Value
+            });
+            await dbContext.SaveChangesAsync();
+        }
 
-        await dbContext.SaveChangesAsync();
         await LoadAsync();
     }
 

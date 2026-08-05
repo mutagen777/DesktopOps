@@ -4,41 +4,46 @@
 
 <PageTitle>Rollouts</PageTitle>
 
-<h1>Rollout status</h1>
-<p class="text-muted">Recent deployment events reported by agents and embedded clients.</p>
+<p class="page-lead">Statusmeldungen der Agents nach Download und Installation.</p>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Time (UTC)</th>
-            <th>User</th>
-            <th>Machine</th>
-            <th>Program</th>
-            <th>Version</th>
-            <th>Status</th>
-            <th>Message</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in events)
-        {
+<div class="table-panel">
+    <table class="table">
+        <thead>
             <tr>
-                <td>@item.TimestampUtc.ToString("u")</td>
-                <td>@item.ClientRegistration?.UserName</td>
-                <td>@item.ClientRegistration?.MachineName</td>
-                <td>@item.ReleasePackage?.Program?.Name</td>
-                <td>@item.ReleasePackage?.Version</td>
-                <td>@item.Status</td>
-                <td>@item.Message</td>
+                <th>Zeit (UTC)</th>
+                <th>Benutzer</th>
+                <th>Rechner</th>
+                <th>Programm</th>
+                <th>Version</th>
+                <th>Status</th>
+                <th>Meldung</th>
             </tr>
-        }
-    </tbody>
-</table>
-
-@if (events.Count == 0)
-{
-    <p>No deployment events yet.</p>
-}
+        </thead>
+        <tbody>
+            @if (events.Count == 0)
+            {
+                <tr>
+                    <td colspan="7" class="text-muted">Noch keine Rollout-Ereignisse.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in events)
+                {
+                    <tr>
+                        <td>@item.TimestampUtc.ToString("u")</td>
+                        <td>@item.ClientRegistration?.UserName</td>
+                        <td>@item.ClientRegistration?.MachineName</td>
+                        <td>@item.ReleasePackage?.Program?.Name</td>
+                        <td>@item.ReleasePackage?.Version</td>
+                        <td>@item.Status</td>
+                        <td>@item.Message</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
 
 @code {
     private List<DeploymentEvent> events = [];

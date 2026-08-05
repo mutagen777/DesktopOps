@@ -7,7 +7,7 @@
             <a href="">DesktopOps</a>
         </div>
         <NavMenu />
-        <div class="admin-version">Admin portal</div>
+        <div class="admin-version">Admin</div>
     </nav>
 
     <div class="admin-main">
@@ -21,8 +21,8 @@
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    Ein unerwarteter Fehler ist aufgetreten.
+    <a href="." class="reload">Neu laden</a>
     <span class="dismiss">🗙</span>
 </div>
 
@@ -34,22 +34,22 @@
             var relative = Navigation.ToBaseRelativePath(Navigation.Uri).Trim('/').ToLowerInvariant();
             if (string.IsNullOrEmpty(relative))
             {
-                return "Dashboard";
+                return "Übersicht";
             }
 
             if (relative.StartsWith("programs"))
             {
-                return "Programs";
+                return "Programme";
             }
 
             if (relative.StartsWith("groups"))
             {
-                return "Groups";
+                return "Gruppen";
             }
 
             if (relative.StartsWith("assignments"))
             {
-                return "Assignments";
+                return "Zuweisungen";
             }
 
             if (relative.StartsWith("releases"))

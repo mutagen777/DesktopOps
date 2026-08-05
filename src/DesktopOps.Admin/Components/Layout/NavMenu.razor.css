@@ -1,22 +1,32 @@
 .admin-nav {
     display: flex;
     flex-direction: column;
-    padding: 1rem 0 0.5rem;
+    padding: 0.75rem 0;
+    gap: 0.1rem;
     flex: 1;
 }
 
-.admin-nav-link {
-    color: #f3f6f9 !important;
-    text-decoration: none;
-    padding: 0.55rem 1.25rem;
+.admin-nav-link,
+a.admin-nav-link {
+    color: #ffffff !important;
+    text-decoration: none !important;
+    padding: 0.7rem 1.2rem;
     display: block;
-}
-
-.admin-nav-link:hover {
-    background: rgba(255, 255, 255, 0.12);
-}
-
-.admin-nav-link.active {
-    background: rgba(51, 55, 69, 0.45);
+    font-size: 1rem;
     font-weight: 600;
+    line-height: 1.3;
+    opacity: 1;
+}
+
+.admin-nav-link:hover,
+a.admin-nav-link:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff !important;
+}
+
+.admin-nav-link.active,
+a.admin-nav-link.active {
+    background: #333745;
+    color: #ffffff !important;
+    font-weight: 700;
 }

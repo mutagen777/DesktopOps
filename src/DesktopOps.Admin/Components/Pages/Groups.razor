@@ -2,46 +2,56 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 
-<PageTitle>Groups</PageTitle>
+<PageTitle>Gruppen</PageTitle>
 
-<h1>Groups</h1>
+<p class="page-lead">Benutzer in einer Gruppe erhalten alle Programme, die dieser Gruppe zugewiesen sind.</p>
 
-<EditForm Model="newGroup" OnValidSubmit="CreateGroupAsync">
-    <div class="row g-3 mb-3">
-        <div class="col-md-4">
-            <label class="form-label">Group name</label>
-            <InputText class="form-control" @bind-Value="newGroup.Name" />
+<div class="panel">
+    <div class="panel-title">Gruppe anlegen</div>
+    <EditForm Model="newGroup" OnValidSubmit="CreateGroupAsync">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Name</label>
+                <InputText class="form-control" @bind-Value="newGroup.Name" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Beschreibung</label>
+                <InputText class="form-control" @bind-Value="newGroup.Description" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Benutzer (kommagetrennt)</label>
+                <InputText class="form-control" @bind-Value="newGroup.UserNames" placeholder="z. B. peke, alice" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" type="submit">Hinzufügen</button>
+            </div>
         </div>
-        <div class="col-md-4">
-            <label class="form-label">Description</label>
-            <InputText class="form-control" @bind-Value="newGroup.Description" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Users (comma separated)</label>
-            <InputText class="form-control" @bind-Value="newGroup.UserNames" />
-        </div>
-    </div>
-    <button class="btn btn-primary" type="submit">Add group</button>
-</EditForm>
+    </EditForm>
+</div>
+
+@if (groups.Count == 0)
+{
+    <p class="empty-state">Noch keine Gruppen.</p>
+}
 
 @foreach (var group in groups)
 {
-    <div class="border rounded p-3 mt-4">
-        <h5>@group.Name</h5>
-        <div class="text-muted mb-2">@group.Description</div>
-        <div class="mb-2">
-            <strong>Members:</strong>
-            @string.Join(", ", group.Members.Select(static item => item.UserName))
+    <div class="panel">
+        <h3 style="margin:0;font-size:1.1rem;">@group.Name</h3>
+        <p class="group-meta">@(string.IsNullOrWhiteSpace(group.Description) ? "Keine Beschreibung" : group.Description)</p>
+        <div class="group-members">
+            <strong>Mitglieder:</strong>
+            @(group.Members.Count == 0 ? "—" : string.Join(", ", group.Members.Select(static item => item.UserName)))
         </div>
         <div class="row g-2">
             <div class="col-md-4">
                 <input class="form-control"
-                       placeholder="Add username"
+                       placeholder="Benutzername"
                        value="@GetPendingMember(group.Id)"
                        @onchange="e => SetPendingMember(group.Id, e.Value?.ToString())" />
             </div>
             <div class="col-md-2">
-                <button class="btn btn-outline-secondary" @onclick="() => AddMemberAsync(group.Id)">Add user</button>
+                <button class="btn btn-outline-secondary w-100" @onclick="() => AddMemberAsync(group.Id)">Benutzer hinzufügen</button>
             </div>
         </div>
     </div>

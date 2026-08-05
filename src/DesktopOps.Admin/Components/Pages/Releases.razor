@@ -5,67 +5,90 @@
 
 <PageTitle>Releases</PageTitle>
 
-<h1>Releases</h1>
+<p class="page-lead">ZIP hochladen und veröffentlichen – zugewiesene Agents können es dann installieren.</p>
 
-<div class="row g-3 mb-3">
-    <div class="col-md-4">
-        <label class="form-label">Program</label>
-        <InputSelect class="form-select" @bind-Value="selectedProgramId">
-            <option value="">Select program</option>
-            @foreach (var program in programs)
-            {
-                <option value="@program.Id">@program.Name</option>
-            }
-        </InputSelect>
+<div class="panel">
+    <div class="panel-title">Release hochladen</div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Programm</label>
+            <InputSelect class="form-select" @bind-Value="selectedProgramId">
+                <option value="">Programm wählen</option>
+                @foreach (var program in programs)
+                {
+                    <option value="@program.Id">@program.Name</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Version</label>
+            <InputText class="form-control" @bind-Value="version" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Paket (ZIP)</label>
+            <InputFile OnChange="OnFileSelected" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Release Notes</label>
+            <InputText class="form-control" @bind-Value="releaseNotes" />
+        </div>
     </div>
-    <div class="col-md-2">
-        <label class="form-label">Version</label>
-        <InputText class="form-control" @bind-Value="version" />
+    <div class="mb-3">
+        <InputCheckbox @bind-Value="isMandatory" /> Pflicht-Update
     </div>
-    <div class="col-md-3">
-        <label class="form-label">Package (ZIP)</label>
-        <InputFile OnChange="OnFileSelected" />
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Release notes</label>
-        <InputText class="form-control" @bind-Value="releaseNotes" />
-    </div>
+    <button class="btn btn-primary" @onclick="CreateReleaseAsync">Hochladen</button>
 </div>
-<div class="mb-3">
-    <InputCheckbox @bind-Value="isMandatory" /> Mandatory update
-</div>
-<button class="btn btn-primary" @onclick="CreateReleaseAsync">Upload release</button>
 
-<table class="table mt-4">
-    <thead>
-        <tr>
-            <th>Program</th>
-            <th>Version</th>
-            <th>SHA-256</th>
-            <th>Size</th>
-            <th>Published</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var release in releases)
-        {
+<div class="table-panel">
+    <table class="table">
+        <thead>
             <tr>
-                <td>@release.Program?.Name</td>
-                <td>@release.Version</td>
-                <td><code class="small">@(string.IsNullOrEmpty(release.PackageHash) ? "-" : release.PackageHash[..Math.Min(12, release.PackageHash.Length)])…</code></td>
-                <td>@FormatSize(release.PackageSize)</td>
-                <td>@(release.PublishedAtUtc?.ToString("u") ?? "draft")</td>
-                <td>
-                    @if (release.PublishedAtUtc is null)
-                    {
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => PublishAsync(release.Id)">Publish</button>
-                    }
-                </td>
+                <th>Programm</th>
+                <th>Version</th>
+                <th>SHA-256</th>
+                <th>Größe</th>
+                <th>Status</th>
+                <th></th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @if (releases.Count == 0)
+            {
+                <tr>
+                    <td colspan="6" class="text-muted">Noch keine Releases.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var release in releases)
+                {
+                    <tr>
+                        <td>@release.Program?.Name</td>
+                        <td>@release.Version</td>
+                        <td class="hash-cell">@(string.IsNullOrEmpty(release.PackageHash) ? "—" : release.PackageHash[..Math.Min(12, release.PackageHash.Length)] + "…")</td>
+                        <td>@FormatSize(release.PackageSize)</td>
+                        <td>
+                            @if (release.PublishedAtUtc is null)
+                            {
+                                <span class="status-draft">Entwurf</span>
+                            }
+                            else
+                            {
+                                <span class="status-published">Veröffentlicht</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (release.PublishedAtUtc is null)
+                            {
+                                <button class="btn btn-sm btn-primary" @onclick="() => PublishAsync(release.Id)">Veröffentlichen</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
 
 @code {
     private IBrowserFile? packageFile;

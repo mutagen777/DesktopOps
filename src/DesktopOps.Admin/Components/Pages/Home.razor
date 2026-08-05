@@ -1,36 +1,82 @@
 ﻿@page "/"
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 
-<PageTitle>Dashboard</PageTitle>
+<PageTitle>Übersicht</PageTitle>
 
-<h1>DesktopOps Admin</h1>
+<p class="page-lead">Kurzüberblick über Programme, Gruppen, Releases und Zuweisungen.</p>
 
-<p>Self-hosted deployment dashboard for programs, groups, assignments, releases, and rollouts.</p>
+<div class="dashboard-wrap">
+    <div class="dashboard-card">
+        <h2 class="dashboard-card-title"><a href="programs">Programme</a></h2>
+        <div class="dashboard-card-metric">@programCount</div>
+        <div class="dashboard-card-subtitle">Zuletzt</div>
+        <ul>
+            @if (latestPrograms.Count == 0)
+            {
+                <li class="dashboard-empty">Noch keine</li>
+            }
+            else
+            {
+                @foreach (var program in latestPrograms)
+                {
+                    <li><a href="programs">@program.Name</a></li>
+                }
+            }
+        </ul>
+    </div>
 
-<div class="row g-3">
-    <div class="col-md-3">
-        <div class="border rounded p-3">
-            <div class="text-muted">Programs</div>
-            <div class="fs-2">@programCount</div>
-        </div>
+    <div class="dashboard-card">
+        <h2 class="dashboard-card-title"><a href="groups">Gruppen</a></h2>
+        <div class="dashboard-card-metric">@groupCount</div>
+        <div class="dashboard-card-subtitle">Zuletzt</div>
+        <ul>
+            @if (latestGroups.Count == 0)
+            {
+                <li class="dashboard-empty">Noch keine</li>
+            }
+            else
+            {
+                @foreach (var group in latestGroups)
+                {
+                    <li><a href="groups">@group.Name</a></li>
+                }
+            }
+        </ul>
     </div>
-    <div class="col-md-3">
-        <div class="border rounded p-3">
-            <div class="text-muted">Groups</div>
-            <div class="fs-2">@groupCount</div>
-        </div>
+
+    <div class="dashboard-card">
+        <h2 class="dashboard-card-title"><a href="releases">Veröffentlichte Releases</a></h2>
+        <div class="dashboard-card-metric">@publishedReleaseCount</div>
+        <div class="dashboard-card-subtitle">Zuletzt</div>
+        <ul>
+            @if (latestReleases.Count == 0)
+            {
+                <li class="dashboard-empty">Noch keine</li>
+            }
+            else
+            {
+                @foreach (var release in latestReleases)
+                {
+                    <li>
+                        <a href="releases">@release.Program?.Name @release.Version</a>
+                        @if (release.PublishedAtUtc is null)
+                        {
+                            <span class="status-draft">Entwurf</span>
+                        }
+                    </li>
+                }
+            }
+        </ul>
     </div>
-    <div class="col-md-3">
-        <div class="border rounded p-3">
-            <div class="text-muted">Assignments</div>
-            <div class="fs-2">@assignmentCount</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="border rounded p-3">
-            <div class="text-muted">Published releases</div>
-            <div class="fs-2">@publishedReleaseCount</div>
-        </div>
+
+    <div class="dashboard-card">
+        <h2 class="dashboard-card-title"><a href="assignments">Zuweisungen</a></h2>
+        <div class="dashboard-card-metric">@assignmentCount</div>
+        <div class="dashboard-card-subtitle">Aktionen</div>
+        <ul>
+            <li><a href="releases">Release hochladen / veröffentlichen</a></li>
+            <li><a href="rollouts">Rollouts öffnen</a></li>
+        </ul>
     </div>
 </div>
 
@@ -39,6 +85,9 @@
     private int groupCount;
     private int programCount;
     private int publishedReleaseCount;
+    private List<ManagedProgram> latestPrograms = [];
+    private List<UserGroup> latestGroups = [];
+    private List<ReleasePackage> latestReleases = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -47,5 +96,23 @@
         groupCount = await dbContext.UserGroups.CountAsync();
         assignmentCount = await dbContext.ProgramAssignments.CountAsync();
         publishedReleaseCount = await dbContext.ReleasePackages.CountAsync(item => item.PublishedAtUtc != null);
+
+        latestPrograms = await dbContext.Programs
+            .OrderBy(static item => item.Name)
+            .Take(5)
+            .ToListAsync();
+
+        latestGroups = await dbContext.UserGroups
+            .OrderBy(static item => item.Name)
+            .Take(5)
+            .ToListAsync();
+
+        var releases = await dbContext.ReleasePackages
+            .Include(static item => item.Program)
+            .ToListAsync();
+        latestReleases = releases
+            .OrderByDescending(static item => item.CreatedAtUtc)
+            .Take(5)
+            .ToList();
     }
 }
