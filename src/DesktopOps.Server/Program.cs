@@ -1,3 +1,4 @@
+using DesktopOps.Server;
 using DesktopOps.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -28,6 +29,15 @@ var provider = builder.Configuration["Database:Provider"] ?? "Sqlite";
 
 builder.Services.AddSingleton(storageOptions);
 builder.Services.AddSingleton<PackageStorageService>();
+
+var apiKeyOptions = builder.Configuration.GetSection(ApiKeyOptions.SectionName).Get<ApiKeyOptions>()
+    ?? new ApiKeyOptions();
+if (string.IsNullOrWhiteSpace(apiKeyOptions.ApiKeyHeader))
+{
+    apiKeyOptions.ApiKeyHeader = ApiKeyOptions.DefaultHeaderName;
+}
+
+builder.Services.AddSingleton(apiKeyOptions);
 builder.Services.AddDbContext<DesktopOpsDbContext>(options =>
 {
     if (string.Equals(provider, "SqlServer", StringComparison.OrdinalIgnoreCase))
@@ -50,12 +60,14 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
+app.UseMiddleware<ApiKeyMiddleware>();
 
-app.MapGet("/", () => Results.Ok(new
+app.MapGet("/", (ApiKeyOptions security) => Results.Ok(new
 {
     name = "DesktopOps Server",
     version = "0.3.0",
-    product = "DesktopOps"
+    product = "DesktopOps",
+    apiKeyRequired = security.IsEnabled
 }));
 
 app.MapGet("/api/programs", async (DesktopOpsDbContext dbContext) =>
@@ -195,6 +207,7 @@ app.MapGet("/api/releases", async (DesktopOpsDbContext dbContext) =>
             release.PackageSize,
             release.ReleaseNotes,
             release.IsMandatory,
+            release.RolloutPercent,
             release.CreatedAtUtc,
             release.PublishedAtUtc
         }));
@@ -235,6 +248,12 @@ app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbC
         packageStream,
         cancellationToken);
 
+    var rolloutPercent = 100;
+    if (int.TryParse(form["rolloutPercent"], out var parsedRollout))
+    {
+        rolloutPercent = Math.Clamp(parsedRollout, 0, 100);
+    }
+
     var release = new ReleasePackage
     {
         ProgramId = programId,
@@ -244,7 +263,8 @@ app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbC
         PackageHash = stored.Sha256Hash,
         PackageSize = stored.SizeBytes,
         ReleaseNotes = form["releaseNotes"].ToString(),
-        IsMandatory = bool.TryParse(form["isMandatory"], out var isMandatory) && isMandatory
+        IsMandatory = bool.TryParse(form["isMandatory"], out var isMandatory) && isMandatory,
+        RolloutPercent = rolloutPercent
     };
 
     dbContext.ReleasePackages.Add(release);
@@ -259,17 +279,23 @@ app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbC
         release.PackageSize,
         release.ReleaseNotes,
         release.IsMandatory,
+        release.RolloutPercent,
         release.CreatedAtUtc,
         release.PublishedAtUtc
     });
 });
 
-app.MapPost("/api/releases/{releaseId:guid}/publish", async (Guid releaseId, DesktopOpsDbContext dbContext) =>
+app.MapPost("/api/releases/{releaseId:guid}/publish", async (Guid releaseId, PublishReleaseRequest? request, DesktopOpsDbContext dbContext) =>
 {
     var release = await dbContext.ReleasePackages.FirstOrDefaultAsync(item => item.Id == releaseId);
     if (release is null)
     {
         return Results.NotFound();
+    }
+
+    if (request?.RolloutPercent is int percent)
+    {
+        release.RolloutPercent = Math.Clamp(percent, 0, 100);
     }
 
     release.PublishedAtUtc = DateTimeOffset.UtcNow;
@@ -280,8 +306,22 @@ app.MapPost("/api/releases/{releaseId:guid}/publish", async (Guid releaseId, Des
         release.ProgramId,
         release.Version,
         release.PackageHash,
+        release.RolloutPercent,
         release.PublishedAtUtc
     });
+});
+
+app.MapPatch("/api/releases/{releaseId:guid}/rollout", async (Guid releaseId, UpdateRolloutRequest request, DesktopOpsDbContext dbContext) =>
+{
+    var release = await dbContext.ReleasePackages.FirstOrDefaultAsync(item => item.Id == releaseId);
+    if (release is null)
+    {
+        return Results.NotFound();
+    }
+
+    release.RolloutPercent = Math.Clamp(request.RolloutPercent, 0, 100);
+    await dbContext.SaveChangesAsync();
+    return Results.Ok(new { release.Id, release.Version, release.RolloutPercent, release.PublishedAtUtc });
 });
 
 app.MapGet("/api/rollouts", async (DesktopOpsDbContext dbContext) =>
@@ -366,7 +406,7 @@ app.MapGet("/api/clients/{clientId:guid}/programs", async (Guid clientId, Deskto
         return Results.NotFound();
     }
 
-    var programs = await GetAssignedProgramsQuery(dbContext, client.UserName)
+    var programs = await GetAssignedProgramsQuery(dbContext, client.UserName, client.WindowsSid)
         .Select(program => new
         {
             program.Id,
@@ -387,7 +427,7 @@ app.MapGet("/api/clients/{clientId:guid}/assignments", async (Guid clientId, Des
         return Results.NotFound();
     }
 
-    var programs = await GetAssignedProgramsQuery(dbContext, client.UserName)
+    var programs = await GetAssignedProgramsQuery(dbContext, client.UserName, client.WindowsSid)
         .Include(static item => item.Releases)
         .ToListAsync();
 
@@ -395,6 +435,7 @@ app.MapGet("/api/clients/{clientId:guid}/assignments", async (Guid clientId, Des
     {
         var latest = program.Releases
             .Where(static release => release.PublishedAtUtc.HasValue)
+            .Where(release => RolloutEligibility.IsIncluded(client.UserName, release.Id, release.RolloutPercent))
             .OrderByDescending(static release => ParseVersion(release.Version))
             .FirstOrDefault();
 
@@ -440,8 +481,7 @@ app.MapGet("/api/clients/{clientId:guid}/updates", async (Guid clientId, string 
     }
 
     var isAssigned = program.Assignments.Any(assignment =>
-        assignment.UserGroup!.Members.Any(member =>
-            string.Equals(member.UserName, client.UserName, StringComparison.OrdinalIgnoreCase)));
+        assignment.UserGroup!.Members.Any(member => MemberMatchesClient(member, client.UserName, client.WindowsSid)));
 
     if (!isAssigned)
     {
@@ -450,6 +490,7 @@ app.MapGet("/api/clients/{clientId:guid}/updates", async (Guid clientId, string 
 
     var updates = program.Releases
         .Where(static release => release.PublishedAtUtc.HasValue)
+        .Where(release => RolloutEligibility.IsIncluded(client.UserName, release.Id, release.RolloutPercent))
         .Select(release => new
         {
             release.Id,
@@ -458,6 +499,7 @@ app.MapGet("/api/clients/{clientId:guid}/updates", async (Guid clientId, string 
             release.IsMandatory,
             release.PackageHash,
             release.PackageSize,
+            release.RolloutPercent,
             packageUrl = $"/api/packages/{release.Id}"
         })
         .OrderByDescending(static release => ParseVersion(release.Version))
@@ -512,13 +554,34 @@ app.MapGet("/api/packages/{releaseId:guid}", async (Guid releaseId, DesktopOpsDb
 
 app.Run();
 
-static IQueryable<ManagedProgram> GetAssignedProgramsQuery(DesktopOpsDbContext dbContext, string userName)
+static IQueryable<ManagedProgram> GetAssignedProgramsQuery(
+    DesktopOpsDbContext dbContext,
+    string userName,
+    string? windowsSid)
 {
     var normalizedUser = userName.Trim().ToLowerInvariant();
+    var normalizedSid = string.IsNullOrWhiteSpace(windowsSid) ? null : windowsSid.Trim();
+
     return dbContext.Programs
         .Where(program => program.IsActive && program.Assignments.Any(assignment =>
-            assignment.UserGroup!.Members.Any(member => member.UserName.ToLower() == normalizedUser)))
+            assignment.UserGroup!.Members.Any(member =>
+                member.UserName.ToLower() == normalizedUser
+                || (normalizedSid != null
+                    && member.WindowsSid != null
+                    && member.WindowsSid == normalizedSid))))
         .OrderBy(static program => program.Name);
+}
+
+static bool MemberMatchesClient(UserGroupMember member, string userName, string? windowsSid)
+{
+    if (string.Equals(member.UserName, userName, StringComparison.OrdinalIgnoreCase))
+    {
+        return true;
+    }
+
+    return !string.IsNullOrWhiteSpace(member.WindowsSid)
+        && !string.IsNullOrWhiteSpace(windowsSid)
+        && string.Equals(member.WindowsSid, windowsSid, StringComparison.OrdinalIgnoreCase);
 }
 
 static Version ParseVersion(string value)
@@ -551,6 +614,10 @@ internal sealed record ClientDeploymentEventRequest(
     DeploymentStatus Status,
     string? Message,
     string? InstalledVersion);
+
+internal sealed record PublishReleaseRequest(int? RolloutPercent);
+
+internal sealed record UpdateRolloutRequest(int RolloutPercent);
 
 internal sealed record AssignedProgramDto(
     Guid Id,

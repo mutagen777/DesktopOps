@@ -26,6 +26,12 @@ public sealed class UpdateService : IUpdateService
             _httpClient.BaseAddress = Options.ServerUri;
         }
 
+        if (!string.IsNullOrWhiteSpace(Options.ApiKey))
+        {
+            _httpClient.DefaultRequestHeaders.Remove("X-DesktopOps-Key");
+            _httpClient.DefaultRequestHeaders.Add("X-DesktopOps-Key", Options.ApiKey.Trim());
+        }
+
         Directory.CreateDirectory(Options.CacheDirectory);
     }
 

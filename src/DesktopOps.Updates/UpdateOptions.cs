@@ -15,6 +15,11 @@ public sealed class UpdateOptions
 
     public string? WindowsSid { get; set; }
 
+    /// <summary>
+    /// Shared API key for <c>X-DesktopOps-Key</c> (must match server <c>Security:ApiKey</c> when set).
+    /// </summary>
+    public string? ApiKey { get; set; }
+
     public string CacheDirectory { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "DesktopOps",
