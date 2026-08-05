@@ -8,6 +8,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="8.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.*" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="8.*" />
   </ItemGroup>
 
   <PropertyGroup>

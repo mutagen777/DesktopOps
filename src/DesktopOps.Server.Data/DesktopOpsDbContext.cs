@@ -56,6 +56,7 @@ public sealed class DesktopOpsDbContext : DbContext
         {
             entity.HasIndex(static item => item.Name).IsUnique();
             entity.Property(static item => item.Name).HasMaxLength(200);
+            entity.Property(static item => item.ActiveDirectoryGroup).HasMaxLength(200);
         });
 
         modelBuilder.Entity<UserGroupMember>(entity =>

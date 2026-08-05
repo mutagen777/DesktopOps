@@ -1,5 +1,6 @@
 using DesktopOps.Admin;
 using DesktopOps.Admin.Components;
+using DesktopOps.Admin.Services;
 using DesktopOps.Server.Data;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
@@ -35,6 +36,15 @@ var security = builder.Configuration.GetSection(SecurityOptions.SectionName).Get
 builder.Services.AddSingleton(security);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
+if (OperatingSystem.IsWindows())
+{
+    builder.Services.AddSingleton<IDirectoryAccountLookup, WindowsDirectoryAccountLookup>();
+}
+else
+{
+    builder.Services.AddSingleton<IDirectoryAccountLookup, NullDirectoryAccountLookup>();
+}
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 

@@ -32,6 +32,9 @@ public sealed class UserGroup : TimestampEntity
 
     public string? Description { get; set; }
 
+    /// <summary>Optional AD/local security group used as the source for member sync.</summary>
+    public string? ActiveDirectoryGroup { get; set; }
+
     public List<UserGroupMember> Members { get; set; } = [];
 
     public List<ProgramAssignment> Assignments { get; set; } = [];
@@ -79,6 +82,12 @@ public sealed class ReleasePackage : TimestampEntity
     public string? ReleaseNotes { get; set; }
 
     public bool IsMandatory { get; set; }
+
+    /// <summary>
+    /// Percentage of assigned users (0–100) that receive this published release.
+    /// Stable per user+release via hash. 100 = everyone.
+    /// </summary>
+    public int RolloutPercent { get; set; } = 100;
 
     public DateTimeOffset? PublishedAtUtc { get; set; }
 

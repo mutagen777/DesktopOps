@@ -2,28 +2,38 @@
 @attribute [Authorize(Policy = "Manager")]
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+@inject IDirectoryAccountLookup DirectoryLookup
 
 <PageTitle>Gruppen</PageTitle>
 
-<p class="page-lead">Benutzer in einer Gruppe erhalten alle Programme, die dieser Gruppe zugewiesen sind.</p>
+<p class="page-lead">Benutzer in einer Gruppe erhalten alle Programme, die dieser Gruppe zugewiesen sind. Optional: SID auflösen und Mitglieder aus einer AD-/Windows-Gruppe übernehmen.</p>
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="panel status-banner">@statusMessage</div>
+}
 
 <div class="panel">
     <div class="panel-title">Gruppe anlegen</div>
     <EditForm Model="newGroup" OnValidSubmit="CreateGroupAsync">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-3">
+        <div class="row g-3">
+            <div class="col-md-4">
                 <label class="form-label">Name</label>
                 <InputText class="form-control" @bind-Value="newGroup.Name" />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">Beschreibung</label>
                 <InputText class="form-control" @bind-Value="newGroup.Description" />
             </div>
             <div class="col-md-4">
+                <label class="form-label">AD-Gruppe (optional)</label>
+                <InputText class="form-control" @bind-Value="newGroup.ActiveDirectoryGroup" placeholder="DOMAIN\Gruppe" />
+            </div>
+            <div class="col-md-8">
                 <label class="form-label">Benutzer (kommagetrennt)</label>
                 <InputText class="form-control" @bind-Value="newGroup.UserNames" placeholder="z. B. peke, alice" />
             </div>
-            <div class="col-md-2">
+            <div class="col-md-4 d-flex align-items-end">
                 <button class="btn btn-primary w-100" type="submit">Hinzufügen</button>
             </div>
         </div>
@@ -41,27 +51,77 @@
         <h3 style="margin:0;font-size:1.1rem;">@group.Name</h3>
         <p class="group-meta">@(string.IsNullOrWhiteSpace(group.Description) ? "Keine Beschreibung" : group.Description)</p>
         <div class="group-members">
-            <strong>Mitglieder:</strong>
-            @(group.Members.Count == 0 ? "—" : string.Join(", ", group.Members.Select(static item => item.UserName)))
+            <strong>Mitglieder (@group.Members.Count):</strong>
+            @if (group.Members.Count == 0)
+            {
+                <span> —</span>
+            }
+            else
+            {
+                <ul class="member-list">
+                    @foreach (var member in group.Members.OrderBy(static item => item.UserName))
+                    {
+                        <li>
+                            @member.UserName
+                            @if (!string.IsNullOrWhiteSpace(member.WindowsSid))
+                            {
+                                <span class="member-sid" title="@member.WindowsSid">SID</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
         </div>
-        <div class="row g-2">
+
+        <div class="row g-2 align-items-end mb-2">
             <div class="col-md-4">
+                <label class="form-label">Benutzer hinzufügen</label>
                 <input class="form-control"
-                       placeholder="Benutzername"
+                       placeholder="DOMAIN\user oder samAccountName"
                        value="@GetPendingMember(group.Id)"
                        @onchange="e => SetPendingMember(group.Id, e.Value?.ToString())" />
             </div>
             <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" @onclick="() => AddMemberAsync(group.Id)">Benutzer hinzufügen</button>
+                <button class="btn btn-outline-secondary w-100" @onclick="() => AddMemberAsync(group.Id)">Hinzufügen</button>
             </div>
         </div>
+
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">AD-/Windows-Gruppe</label>
+                <input class="form-control"
+                       placeholder="DOMAIN\DesktopOps-Users"
+                       value="@GetPendingAdGroup(group.Id, group.ActiveDirectoryGroup)"
+                       @onchange="e => SetPendingAdGroup(group.Id, e.Value?.ToString())" />
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-primary w-100"
+                        disabled="@(!DirectoryLookup.IsAvailable)"
+                        @onclick="() => SyncFromDirectoryAsync(group.Id)">
+                    Aus AD synchronisieren
+                </button>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-secondary w-100"
+                        disabled="@(!DirectoryLookup.IsAvailable)"
+                        @onclick="() => ResolveMissingSidsAsync(group.Id)">
+                    SIDs auflösen
+                </button>
+            </div>
+        </div>
+        @if (!DirectoryLookup.IsAvailable)
+        {
+            <p class="group-meta mt-2 mb-0">Verzeichnisdienste nur unter Windows verfügbar.</p>
+        }
     </div>
 }
 
 @code {
+    private readonly Dictionary<Guid, string> pendingAdGroups = [];
     private readonly Dictionary<Guid, string> pendingMembers = [];
     private readonly GroupInput newGroup = new();
     private List<UserGroup> groups = [];
+    private string? statusMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,9 +130,10 @@
 
     private async Task CreateGroupAsync()
     {
+        statusMessage = null;
         var members = newGroup.UserNames
             .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(static userName => new UserGroupMember { UserName = userName })
+            .Select(CreateMemberFromName)
             .ToList();
 
         await using var dbContext = await DbFactory.CreateDbContextAsync();
@@ -80,13 +141,18 @@
         {
             Name = newGroup.Name.Trim(),
             Description = newGroup.Description?.Trim(),
+            ActiveDirectoryGroup = string.IsNullOrWhiteSpace(newGroup.ActiveDirectoryGroup)
+                ? null
+                : newGroup.ActiveDirectoryGroup.Trim(),
             Members = members
         });
 
         await dbContext.SaveChangesAsync();
         newGroup.Name = string.Empty;
         newGroup.Description = string.Empty;
+        newGroup.ActiveDirectoryGroup = string.Empty;
         newGroup.UserNames = string.Empty;
+        statusMessage = $"Gruppe angelegt ({members.Count} Mitglied(er)).";
         await LoadAsync();
     }
 
@@ -97,16 +163,122 @@
             return;
         }
 
+        statusMessage = null;
+        var member = CreateMemberFromName(userName);
         await using var dbContext = await DbFactory.CreateDbContextAsync();
-        dbContext.UserGroupMembers.Add(new UserGroupMember
+        var exists = await dbContext.UserGroupMembers.AnyAsync(item =>
+            item.UserGroupId == groupId &&
+            item.UserName.ToLower() == member.UserName.ToLower());
+        if (!exists)
         {
-            UserGroupId = groupId,
-            UserName = userName.Trim()
-        });
+            member.UserGroupId = groupId;
+            dbContext.UserGroupMembers.Add(member);
+            await dbContext.SaveChangesAsync();
+            statusMessage = string.IsNullOrWhiteSpace(member.WindowsSid)
+                ? $"Benutzer {member.UserName} hinzugefügt (ohne SID)."
+                : $"Benutzer {member.UserName} hinzugefügt.";
+        }
 
-        await dbContext.SaveChangesAsync();
         pendingMembers[groupId] = string.Empty;
         await LoadAsync();
+    }
+
+    private async Task SyncFromDirectoryAsync(Guid groupId)
+    {
+        statusMessage = null;
+        var adGroupName = GetPendingAdGroup(groupId, groups.FirstOrDefault(item => item.Id == groupId)?.ActiveDirectoryGroup);
+        if (string.IsNullOrWhiteSpace(adGroupName))
+        {
+            statusMessage = "AD-Gruppenname fehlt.";
+            return;
+        }
+
+        var accounts = DirectoryLookup.GetGroupMembers(adGroupName);
+        if (accounts.Count == 0)
+        {
+            statusMessage = $"Keine Mitglieder in „{adGroupName}“ gefunden (oder Gruppe nicht erreichbar).";
+            return;
+        }
+
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var group = await dbContext.UserGroups
+            .Include(static item => item.Members)
+            .FirstAsync(item => item.Id == groupId);
+
+        group.ActiveDirectoryGroup = adGroupName.Trim();
+        var existing = group.Members.ToDictionary(static item => item.UserName, StringComparer.OrdinalIgnoreCase);
+        var added = 0;
+        var updated = 0;
+
+        foreach (var account in accounts)
+        {
+            if (existing.TryGetValue(account.UserName, out var member))
+            {
+                if (string.IsNullOrWhiteSpace(member.WindowsSid) && !string.IsNullOrWhiteSpace(account.WindowsSid))
+                {
+                    member.WindowsSid = account.WindowsSid;
+                    updated++;
+                }
+
+                continue;
+            }
+
+            group.Members.Add(new UserGroupMember
+            {
+                UserGroupId = groupId,
+                UserName = account.UserName,
+                WindowsSid = account.WindowsSid
+            });
+            added++;
+        }
+
+        await dbContext.SaveChangesAsync();
+        pendingAdGroups[groupId] = adGroupName.Trim();
+        statusMessage = $"AD-Sync „{adGroupName}“: {added} neu, {updated} SID aktualisiert, {accounts.Count} in AD.";
+        await LoadAsync();
+    }
+
+    private async Task ResolveMissingSidsAsync(Guid groupId)
+    {
+        statusMessage = null;
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var members = await dbContext.UserGroupMembers
+            .Where(item => item.UserGroupId == groupId)
+            .ToListAsync();
+
+        var resolved = 0;
+        foreach (var member in members.Where(static item => string.IsNullOrWhiteSpace(item.WindowsSid)))
+        {
+            var account = DirectoryLookup.ResolveUser(member.UserName);
+            if (account?.WindowsSid is null)
+            {
+                continue;
+            }
+
+            member.WindowsSid = account.WindowsSid;
+            if (!string.Equals(member.UserName, account.UserName, StringComparison.OrdinalIgnoreCase))
+            {
+                member.UserName = account.UserName;
+            }
+
+            resolved++;
+        }
+
+        await dbContext.SaveChangesAsync();
+        statusMessage = resolved == 0
+            ? "Keine neuen SIDs aufgelöst."
+            : $"{resolved} SID(s) aufgelöst.";
+        await LoadAsync();
+    }
+
+    private UserGroupMember CreateMemberFromName(string userName)
+    {
+        var account = DirectoryLookup.ResolveUser(userName);
+        return new UserGroupMember
+        {
+            UserName = account?.UserName ?? userName.Trim(),
+            WindowsSid = account?.WindowsSid
+        };
     }
 
     private string GetPendingMember(Guid groupId)
@@ -117,6 +289,21 @@
     private void SetPendingMember(Guid groupId, string? value)
     {
         pendingMembers[groupId] = value ?? string.Empty;
+    }
+
+    private string GetPendingAdGroup(Guid groupId, string? stored)
+    {
+        if (pendingAdGroups.TryGetValue(groupId, out var value))
+        {
+            return value;
+        }
+
+        return stored ?? string.Empty;
+    }
+
+    private void SetPendingAdGroup(Guid groupId, string? value)
+    {
+        pendingAdGroups[groupId] = value ?? string.Empty;
     }
 
     private async Task LoadAsync()
@@ -130,6 +317,10 @@
         foreach (var group in groups)
         {
             pendingMembers.TryAdd(group.Id, string.Empty);
+            if (!string.IsNullOrWhiteSpace(group.ActiveDirectoryGroup))
+            {
+                pendingAdGroups.TryAdd(group.Id, group.ActiveDirectoryGroup);
+            }
         }
     }
 
@@ -138,6 +329,8 @@
         public string Name { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+
+        public string ActiveDirectoryGroup { get; set; } = string.Empty;
 
         public string UserNames { get; set; } = string.Empty;
     }
