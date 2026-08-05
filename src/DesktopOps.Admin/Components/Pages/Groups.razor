@@ -35,7 +35,10 @@
         </div>
         <div class="row g-2">
             <div class="col-md-4">
-                <InputText class="form-control" @bind-Value="pendingMembers[group.Id]" placeholder="Add username" />
+                <input class="form-control"
+                       placeholder="Add username"
+                       value="@GetPendingMember(group.Id)"
+                       @onchange="e => SetPendingMember(group.Id, e.Value?.ToString())" />
             </div>
             <div class="col-md-2">
                 <button class="btn btn-outline-secondary" @onclick="() => AddMemberAsync(group.Id)">Add user</button>
@@ -93,6 +96,16 @@
         await dbContext.SaveChangesAsync();
         pendingMembers[groupId] = string.Empty;
         await LoadAsync();
+    }
+
+    private string GetPendingMember(Guid groupId)
+    {
+        return pendingMembers.TryGetValue(groupId, out var value) ? value : string.Empty;
+    }
+
+    private void SetPendingMember(Guid groupId, string? value)
+    {
+        pendingMembers[groupId] = value ?? string.Empty;
     }
 
     private async Task LoadAsync()

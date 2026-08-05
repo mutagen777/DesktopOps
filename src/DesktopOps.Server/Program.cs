@@ -156,6 +156,13 @@ app.MapPost("/api/groups/{groupId:guid}/members", async (Guid groupId, AddGroupM
 
 app.MapPost("/api/assignments", async (CreateAssignmentRequest request, DesktopOpsDbContext dbContext) =>
 {
+    var existing = await dbContext.ProgramAssignments.FirstOrDefaultAsync(item =>
+        item.ProgramId == request.ProgramId && item.UserGroupId == request.UserGroupId);
+    if (existing is not null)
+    {
+        return Results.Ok(existing);
+    }
+
     var assignment = new ProgramAssignment
     {
         ProgramId = request.ProgramId,
@@ -172,24 +179,25 @@ app.MapGet("/api/releases", async (DesktopOpsDbContext dbContext) =>
     var releases = await dbContext.ReleasePackages
         .AsNoTracking()
         .Include(static item => item.Program)
-        .OrderByDescending(static item => item.CreatedAtUtc)
         .ToListAsync();
 
-    return Results.Ok(releases.Select(release => new
-    {
-        release.Id,
-        release.ProgramId,
-        ProgramName = release.Program?.Name,
-        ProgramSlug = release.Program?.Slug,
-        release.Version,
-        release.OriginalFileName,
-        release.PackageHash,
-        release.PackageSize,
-        release.ReleaseNotes,
-        release.IsMandatory,
-        release.CreatedAtUtc,
-        release.PublishedAtUtc
-    }));
+    return Results.Ok(releases
+        .OrderByDescending(static item => item.CreatedAtUtc)
+        .Select(release => new
+        {
+            release.Id,
+            release.ProgramId,
+            ProgramName = release.Program?.Name,
+            ProgramSlug = release.Program?.Slug,
+            release.Version,
+            release.OriginalFileName,
+            release.PackageHash,
+            release.PackageSize,
+            release.ReleaseNotes,
+            release.IsMandatory,
+            release.CreatedAtUtc,
+            release.PublishedAtUtc
+        }));
 });
 
 app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbContext, PackageStorageService storage, CancellationToken cancellationToken) =>
@@ -266,15 +274,26 @@ app.MapPost("/api/releases/{releaseId:guid}/publish", async (Guid releaseId, Des
 
     release.PublishedAtUtc = DateTimeOffset.UtcNow;
     await dbContext.SaveChangesAsync();
-    return Results.Ok(release);
+    return Results.Ok(new
+    {
+        release.Id,
+        release.ProgramId,
+        release.Version,
+        release.PackageHash,
+        release.PublishedAtUtc
+    });
 });
 
 app.MapGet("/api/rollouts", async (DesktopOpsDbContext dbContext) =>
 {
     var events = await dbContext.DeploymentEvents
+        .AsNoTracking()
         .Include(static item => item.ClientRegistration)
         .Include(static item => item.ReleasePackage!)
             .ThenInclude(static item => item.Program)
+        .ToListAsync();
+
+    return Results.Ok(events
         .OrderByDescending(static item => item.TimestampUtc)
         .Take(200)
         .Select(item => new
@@ -298,13 +317,10 @@ app.MapGet("/api/rollouts", async (DesktopOpsDbContext dbContext) =>
                 {
                     item.ReleasePackage.Id,
                     item.ReleasePackage.Version,
-                    ProgramName = item.ReleasePackage.Program!.Name,
-                    ProgramSlug = item.ReleasePackage.Program.Slug
+                    ProgramName = item.ReleasePackage.Program?.Name,
+                    ProgramSlug = item.ReleasePackage.Program?.Slug
                 }
-        })
-        .ToListAsync();
-
-    return Results.Ok(events);
+        }));
 });
 
 app.MapPost("/api/clients/register", async (ClientRegistrationRequest request, DesktopOpsDbContext dbContext) =>

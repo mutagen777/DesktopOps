@@ -46,12 +46,14 @@
     protected override async Task OnInitializedAsync()
     {
         await using var dbContext = await DbFactory.CreateDbContextAsync();
-        events = await dbContext.DeploymentEvents
+        var loaded = await dbContext.DeploymentEvents
             .Include(static item => item.ClientRegistration)
             .Include(static item => item.ReleasePackage!)
                 .ThenInclude(static item => item.Program)
+            .ToListAsync();
+        events = loaded
             .OrderByDescending(static item => item.TimestampUtc)
             .Take(200)
-            .ToListAsync();
+            .ToList();
     }
 }

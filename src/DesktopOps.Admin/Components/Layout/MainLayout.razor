@@ -1,19 +1,23 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+<div class="admin-shell">
+    <nav class="admin-sidebar">
+        <div class="admin-brand">
+            <a href="">DesktopOps</a>
         </div>
+        <NavMenu />
+        <div class="admin-version">Admin portal</div>
+    </nav>
 
-        <article class="content px-4">
+    <div class="admin-main">
+        <header class="admin-header">
+            <span class="admin-page-title">@CurrentTitle</span>
+        </header>
+        <main class="admin-content">
             @Body
-        </article>
-    </main>
+        </main>
+    </div>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -21,3 +25,44 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private string CurrentTitle
+    {
+        get
+        {
+            var relative = Navigation.ToBaseRelativePath(Navigation.Uri).Trim('/').ToLowerInvariant();
+            if (string.IsNullOrEmpty(relative))
+            {
+                return "Dashboard";
+            }
+
+            if (relative.StartsWith("programs"))
+            {
+                return "Programs";
+            }
+
+            if (relative.StartsWith("groups"))
+            {
+                return "Groups";
+            }
+
+            if (relative.StartsWith("assignments"))
+            {
+                return "Assignments";
+            }
+
+            if (relative.StartsWith("releases"))
+            {
+                return "Releases";
+            }
+
+            if (relative.StartsWith("rollouts"))
+            {
+                return "Rollouts";
+            }
+
+            return "DesktopOps";
+        }
+    }
+}

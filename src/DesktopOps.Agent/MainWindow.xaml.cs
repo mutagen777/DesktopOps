@@ -1,5 +1,4 @@
-﻿using System.Drawing;
-using System.Windows;
+﻿using System.Windows;
 using DesktopOps.Agent.Services;
 
 namespace DesktopOps.Agent;
@@ -9,8 +8,21 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        TrayIcon.Icon = SystemIcons.Application;
+
+        TrayIcon.Icon = TrayIconFactory.Create();
+        TrayIcon.ToolTipText = "DesktopOps Agent";
+        TrayIcon.Visibility = Visibility.Visible;
+
         Hide();
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        TrayIcon.ShowBalloonTip(
+            "DesktopOps Agent",
+            "Running in the notification area. Right-click the blue D icon for updates.",
+            Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
     }
 
     private AgentOrchestrator? Orchestrator =>
@@ -20,6 +32,10 @@ public partial class MainWindow : Window
     {
         if (Orchestrator is null)
         {
+            TrayIcon.ShowBalloonTip(
+                "DesktopOps",
+                "Agent is still starting. Try again in a moment.",
+                Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Warning);
             return;
         }
 
@@ -62,6 +78,7 @@ public partial class MainWindow : Window
 
     private void OnExitClick(object sender, RoutedEventArgs e)
     {
+        TrayIcon.Dispose();
         System.Windows.Application.Current.Shutdown();
     }
 

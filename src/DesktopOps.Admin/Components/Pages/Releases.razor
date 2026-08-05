@@ -132,10 +132,12 @@
     {
         await using var dbContext = await DbFactory.CreateDbContextAsync();
         programs = await dbContext.Programs.OrderBy(static item => item.Name).ToListAsync();
-        releases = await dbContext.ReleasePackages
+        var loadedReleases = await dbContext.ReleasePackages
             .Include(static item => item.Program)
-            .OrderByDescending(static item => item.CreatedAtUtc)
             .ToListAsync();
+        releases = loadedReleases
+            .OrderByDescending(static item => item.CreatedAtUtc)
+            .ToList();
     }
 
     private static string FormatSize(long bytes)
