@@ -1,5 +1,7 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager Navigation
+@inject SecurityOptions Security
+@inject IHttpContextAccessor HttpContextAccessor
 
 <div class="admin-shell">
     <nav class="admin-sidebar">
@@ -7,7 +9,17 @@
             <a href="">DesktopOps</a>
         </div>
         <NavMenu />
-        <div class="admin-version">Admin</div>
+        <div class="admin-version">
+            <div>Admin</div>
+            @if (!string.IsNullOrWhiteSpace(CurrentUser))
+            {
+                <div class="admin-user">@CurrentUser</div>
+            }
+            @if (!Security.Enabled)
+            {
+                <div class="admin-user">Auth aus</div>
+            }
+        </div>
     </nav>
 
     <div class="admin-main">
@@ -27,6 +39,9 @@
 </div>
 
 @code {
+    private string? CurrentUser =>
+        HttpContextAccessor.HttpContext?.User?.Identity?.Name;
+
     private string CurrentTitle
     {
         get

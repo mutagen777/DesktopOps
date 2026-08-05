@@ -1,4 +1,5 @@
 @page "/groups"
+@attribute [Authorize(Policy = "Manager")]
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 

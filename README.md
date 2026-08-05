@@ -101,12 +101,31 @@ Included:
 
 Not included yet:
 
-- Active Directory / Entra sync
+- Active Directory / Entra sync of end-user groups (agent targeting)
 - Velopack / MSI installer channel
 - multi-tenant isolation
 - delta updates
 - signed packages
 - agent self-update channel
+
+### Admin authentication
+
+Windows Negotiate authentication can protect the Blazor admin (same model as typical intranet AD setups):
+
+```json
+"Security": {
+  "Enabled": true,
+  "ADGroup": "DOMAIN\\DesktopOps-Managers",
+  "DeveloperADGroup": "DOMAIN\\DesktopOps-Developers"
+}
+```
+
+| Policy | AD groups | Pages |
+|--------|-----------|--------|
+| Manager | `ADGroup` or `DeveloperADGroup` | Übersicht, Gruppen, Zuweisungen, Rollouts |
+| Developer | `DeveloperADGroup` | Programme, Releases |
+
+Local demo keeps `"Enabled": false` (policies always allow). The agent API on `DesktopOps.Server` stays open for clients — only the Admin UI is gated.
 
 ## Building
 

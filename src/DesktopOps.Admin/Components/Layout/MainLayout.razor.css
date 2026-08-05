@@ -36,6 +36,13 @@
     color: #e8eef4;
 }
 
+.admin-user {
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: #c5d0db;
+    word-break: break-all;
+}
+
 .admin-main {
     flex: 1;
     min-width: 0;

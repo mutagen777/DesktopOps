@@ -1,11 +1,26 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <LayoutView Layout="typeof(Layout.MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+﻿<CascadingAuthenticationState>
+    <Router AppAssembly="typeof(Program).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        <p class="page-lead">Anmeldung erforderlich (Windows-Authentifizierung).</p>
+                    }
+                    else
+                    {
+                        <p class="page-lead">Keine Berechtigung für diese Seite.</p>
+                        <p class="text-muted">Für Programme und Releases wird die Developer-AD-Gruppe benötigt. Für Gruppen und Zuweisungen die Manager- oder Developer-Gruppe.</p>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <LayoutView Layout="typeof(Layout.MainLayout)">
+                <p class="page-lead">Die Seite wurde nicht gefunden.</p>
+                <p><a href="">Zur Übersicht</a></p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

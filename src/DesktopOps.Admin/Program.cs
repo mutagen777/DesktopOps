@@ -1,5 +1,8 @@
+using DesktopOps.Admin;
 using DesktopOps.Admin.Components;
 using DesktopOps.Server.Data;
+using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,8 +30,58 @@ builder.Services.AddDbContextFactory<DesktopOpsDbContext>(options =>
     }
 });
 
+var security = builder.Configuration.GetSection(SecurityOptions.SectionName).Get<SecurityOptions>()
+    ?? new SecurityOptions();
+builder.Services.AddSingleton(security);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+if (security.Enabled)
+{
+    if (string.IsNullOrWhiteSpace(security.DeveloperADGroup))
+    {
+        throw new InvalidOperationException(
+            "Security.DeveloperADGroup must be set when Security.Enabled is true.");
+    }
+
+    if (string.IsNullOrWhiteSpace(security.ADGroup))
+    {
+        throw new InvalidOperationException(
+            "Security.ADGroup must be set when Security.Enabled is true.");
+    }
+
+    builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
+        .AddNegotiate();
+
+    builder.Services.AddAuthorization(options =>
+    {
+        options.FallbackPolicy = new AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build();
+
+        options.AddPolicy("Manager", policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireRole(security.ADGroup, security.DeveloperADGroup);
+        });
+
+        options.AddPolicy("Developer", policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireRole(security.DeveloperADGroup);
+        });
+    });
+}
+else
+{
+    builder.Services.AddAuthorization(options =>
+    {
+        options.AddPolicy("Manager", policy => policy.RequireAssertion(static _ => true));
+        options.AddPolicy("Developer", policy => policy.RequireAssertion(static _ => true));
+    });
+}
 
 var app = builder.Build();
 
@@ -47,6 +100,12 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found");
 app.UseHttpsRedirection();
 
+if (security.Enabled)
+{
+    app.UseAuthentication();
+}
+
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.UseStaticFiles();

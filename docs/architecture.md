@@ -53,6 +53,15 @@ Per program:
 `Database:Provider` = `Sqlite` (default) or `SqlServer`.
 Connection string key: `ConnectionStrings:DesktopOps`.
 
+## Admin security
+
+`DesktopOps.Admin` optionally uses Windows Negotiate authentication with two AD roles (configured under `Security`):
+
+- **Manager** (`ADGroup` or `DeveloperADGroup`) – groups, assignments, rollouts, dashboard
+- **Developer** (`DeveloperADGroup`) – programs and release publish
+
+Set `Security:Enabled` to `true` and fill both group names for production. With `Enabled: false`, authorization policies succeed for local demos. Client-facing `DesktopOps.Server` APIs are not Windows-gated.
+
 ## Decoupling principles
 
 - No private NuGet feeds
