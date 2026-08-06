@@ -19,6 +19,8 @@ public sealed class AgentOrchestrator
     private CancellationTokenSource? _cts;
     private Task? _pollLoop;
     private bool _restartScheduled;
+    private DateTimeOffset? _lastSearchUtc;
+    private string? _lastSearchError;
 
     public AgentOrchestrator(
         IUpdateService updateService,
@@ -38,7 +40,17 @@ public sealed class AgentOrchestrator
         _allowSelfUpdate = allowSelfUpdate;
     }
 
+    public event Action<int>? UpdatesDiscovered;
+
     public bool RestartScheduled => _restartScheduled;
+
+    public DateTimeOffset? LastSearchUtc => _lastSearchUtc;
+
+    public string? LastSearchError => _lastSearchError;
+
+    public string InstallationDirectory => _installService.InstallationDirectory;
+
+    public Version AgentVersion => _updateService.Options.CurrentVersion;
 
     public IReadOnlyList<ProgramUpdateCandidate> PendingUpdates
     {
@@ -97,18 +109,24 @@ public sealed class AgentOrchestrator
                 _pending = candidates;
             }
 
+            _lastSearchUtc = DateTimeOffset.Now;
+            _lastSearchError = null;
             _logger.LogInformation("Found {Count} pending program changes", candidates.Count);
+            UpdatesDiscovered?.Invoke(candidates.Count);
             return candidates.Count;
         }
         catch (Exception ex)
         {
+            _lastSearchError = ex.Message;
             _diagnostics.CaptureException(ex, "SearchUpdates");
             _logger.LogError(ex, "Update search failed");
             return null;
         }
     }
 
-    public async Task<int> InstallPendingAsync(CancellationToken cancellationToken = default)
+    public async Task<int> InstallPendingAsync(
+        IProgress<UpdateProgress>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         List<ProgramUpdateCandidate> pending;
         lock (_sync)
@@ -117,8 +135,14 @@ public sealed class AgentOrchestrator
         }
 
         var installedCount = 0;
-        foreach (var candidate in pending)
+        var total = pending.Count;
+        for (var index = 0; index < pending.Count; index++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            var candidate = pending[index];
+            var label = FormatAction(candidate);
+            progress?.Report(new UpdateProgress(index + 1, total, label, "Vorbereitung…", (double)index / Math.Max(total, 1)));
+
             try
             {
                 if (AgentSelfUpdateService.IsAgentProgram(candidate.Program.Slug))
@@ -134,11 +158,13 @@ public sealed class AgentOrchestrator
                         continue;
                     }
 
+                    progress?.Report(new UpdateProgress(index + 1, total, label, "Agent-Update wird vorbereitet…", (index + 0.5) / Math.Max(total, 1)));
                     var scheduled = await _selfUpdate.TryScheduleSelfUpdateAsync(candidate.Program, cancellationToken);
                     if (scheduled)
                     {
                         installedCount++;
                         _restartScheduled = true;
+                        progress?.Report(new UpdateProgress(index + 1, total, label, "Neustart wird geplant…", 1));
                         break;
                     }
 
@@ -147,6 +173,7 @@ public sealed class AgentOrchestrator
 
                 if (candidate.Action == ProgramUpdateAction.Delete)
                 {
+                    progress?.Report(new UpdateProgress(index + 1, total, label, "Wird entfernt…", (index + 0.5) / Math.Max(total, 1)));
                     _installService.RemoveProgram(candidate.Program.Slug);
                     installedCount++;
                     continue;
@@ -159,34 +186,50 @@ public sealed class AgentOrchestrator
 
                 if (candidate.Action == ProgramUpdateAction.Update)
                 {
+                    progress?.Report(new UpdateProgress(index + 1, total, label, "Backup wird erstellt…", (index + 0.2) / Math.Max(total, 1)));
                     _installService.BackupProgram(candidate.Program.Slug);
                     _installService.RemoveProgram(candidate.Program.Slug);
                 }
 
-                var prepared = await _updateService.PrepareUpdateAsync(candidate.Program.LatestRelease, cancellationToken);
+                progress?.Report(new UpdateProgress(index + 1, total, label, "Download…", (index + 0.4) / Math.Max(total, 1)));
+                var release = candidate.Program.LatestRelease;
+                await _updateService.ReportStatusAsync(
+                    release.Id,
+                    DeploymentStatus.Downloading,
+                    "Download started.",
+                    cancellationToken: cancellationToken);
+
+                var prepared = await _updateService.PrepareUpdateAsync(release, cancellationToken);
+                progress?.Report(new UpdateProgress(index + 1, total, label, "Installation…", (index + 0.7) / Math.Max(total, 1)));
                 var ok = await _installService.InstallFromZipAsync(
                     candidate.Program,
                     prepared.PackagePath,
-                    candidate.Program.LatestRelease.PackageHash,
+                    release.PackageHash,
                     cancellationToken);
 
                 if (!ok)
                 {
                     await _updateService.ReportStatusAsync(
-                        candidate.Program.LatestRelease.Id,
+                        release.Id,
                         DeploymentStatus.Failed,
                         "Install or hash verification failed.",
                         cancellationToken: cancellationToken);
+                    progress?.Report(new UpdateProgress(index + 1, total, label, "Fehlgeschlagen", (index + 1.0) / Math.Max(total, 1)));
                     continue;
                 }
 
                 await _updateService.ReportStatusAsync(
-                    candidate.Program.LatestRelease.Id,
+                    release.Id,
                     DeploymentStatus.Installed,
                     "Installed by DesktopOps Agent.",
-                    candidate.Program.LatestRelease.Version,
+                    release.Version,
                     cancellationToken);
                 installedCount++;
+                progress?.Report(new UpdateProgress(index + 1, total, label, "Fertig", (index + 1.0) / Math.Max(total, 1)));
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -200,6 +243,8 @@ public sealed class AgentOrchestrator
                         ex.Message,
                         cancellationToken: cancellationToken);
                 }
+
+                progress?.Report(new UpdateProgress(index + 1, total, label, ex.Message, (index + 1.0) / Math.Max(total, 1)));
             }
         }
 
@@ -211,9 +256,79 @@ public sealed class AgentOrchestrator
         return installedCount;
     }
 
+    public async Task ReinstallProgramsAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var manifest in _installService.GetInstalledPrograms().ToList())
+        {
+            if (AgentSelfUpdateService.IsAgentProgram(manifest.Slug))
+            {
+                continue;
+            }
+
+            _installService.RemoveProgram(manifest.Slug);
+        }
+
+        await SearchUpdatesAsync(cancellationToken);
+    }
+
+    public IReadOnlyList<ProgramInventoryItem> GetProgramInventory()
+    {
+        var installed = _installService.GetInstalledPrograms();
+        var pendingBySlug = PendingUpdates.ToDictionary(
+            static item => item.Program.Slug,
+            StringComparer.OrdinalIgnoreCase);
+
+        var rows = new List<ProgramInventoryItem>();
+        foreach (var local in installed)
+        {
+            pendingBySlug.TryGetValue(local.Slug, out var pending);
+            rows.Add(new ProgramInventoryItem(
+                local.Name,
+                local.Slug,
+                pending?.Program.LatestRelease?.Version ?? local.Version,
+                local.Version));
+        }
+
+        foreach (var pending in PendingUpdates)
+        {
+            if (rows.Any(item => string.Equals(item.Slug, pending.Program.Slug, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            rows.Add(new ProgramInventoryItem(
+                pending.Program.Name,
+                pending.Program.Slug,
+                pending.Program.LatestRelease?.Version,
+                pending.InstalledVersion));
+        }
+
+        return rows.OrderBy(static item => item.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
     public Task<string> ExportDiagnosticsAsync(CancellationToken cancellationToken = default)
     {
         return _diagnostics.ExportDiagnosticsAsync(cancellationToken);
+    }
+
+    public static string FormatAction(ProgramUpdateCandidate candidate)
+    {
+        var name = string.IsNullOrWhiteSpace(candidate.Program.Name)
+            ? candidate.Program.Slug
+            : candidate.Program.Name;
+        var version = candidate.Program.LatestRelease?.Version;
+
+        return candidate.Action switch
+        {
+            ProgramUpdateAction.Add => string.IsNullOrWhiteSpace(version)
+                ? $"{name} - Installieren"
+                : $"{name} - {version} - Installieren",
+            ProgramUpdateAction.Update => string.IsNullOrWhiteSpace(version)
+                ? $"{name} - Aktualisieren"
+                : $"{name} - {version} - Aktualisieren",
+            ProgramUpdateAction.Delete => $"{name} - Deinstallieren",
+            _ => name
+        };
     }
 
     private ProgramUpdateCandidate? NormalizeCandidate(ProgramUpdateCandidate candidate)
@@ -223,7 +338,6 @@ public sealed class AgentOrchestrator
             return candidate;
         }
 
-        // Never remove the agent via the normal uninstall path.
         if (candidate.Action == ProgramUpdateAction.Delete)
         {
             return null;
@@ -255,7 +369,8 @@ public sealed class AgentOrchestrator
 
     private async Task PollLoopAsync(CancellationToken cancellationToken)
     {
-        await SearchUpdatesAsync(cancellationToken);
+        // Startup force-update is handled by the UI; background poll only discovers.
+        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
         _timer = new PeriodicTimer(_pollInterval);
         try
         {
@@ -269,3 +384,16 @@ public sealed class AgentOrchestrator
         }
     }
 }
+
+public sealed record UpdateProgress(
+    int Current,
+    int Total,
+    string Title,
+    string Detail,
+    double Fraction);
+
+public sealed record ProgramInventoryItem(
+    string Name,
+    string Slug,
+    string? LatestVersion,
+    string? InstalledVersion);

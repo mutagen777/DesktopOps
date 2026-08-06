@@ -64,7 +64,8 @@ Configure `src/DesktopOps.Agent/appsettings.json`:
 `UserName` must match a group member in the admin portal. Leave empty to use `Environment.UserName`.
 Set `ApiKey` to the same value as server `Security:ApiKey` when API key auth is enabled.
 
-Tray menu: check updates, install pending updates, export diagnostics, exit.
+Tray menu: configuration, search updates, reinstall programs, diagnostics, exit.
+On startup the agent searches and (by default) auto-installs pending updates like Autoupdater.
 
 ### Embedded WPF client
 

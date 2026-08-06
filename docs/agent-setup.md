@@ -1,12 +1,28 @@
 # Agent setup
 
-`DesktopOps.Agent` is a WPF tray application with no private UI frameworks.
+`DesktopOps.Agent` is a WPF tray application inspired by Autoupdater client behaviour (without private UI frameworks).
 
 ## Run
 
 ```powershell
 dotnet run --project src/DesktopOps.Agent/DesktopOps.Agent.csproj
 ```
+
+## Behaviour (Autoupdater-like)
+
+| Action | Behaviour |
+|--------|-----------|
+| Startup | Search assigned programs; **auto-install** if updates exist (configurable) |
+| Tray double-click / **Updates suchen...** | Search dialog → update dialog with list + **Ausführen** |
+| Background poll | Discovers updates and shows a balloon (remind again after 30 minutes) |
+| **Konfiguration** | Install folder, last search, programme list (latest vs installed) |
+| **Programme neuinstallieren** | Removes local `.dops` installs (not the agent) and opens the update dialog |
+| Progress | Per-step title + progress bar while installing |
+
+UI settings are stored in `%LocalAppData%\DesktopOps\agent-ui.json`:
+
+- `AutoInstallOnStartup` (default `true`)
+- `NotifyWhenUpdatesAvailable` (default `true`)
 
 ## Configuration
 
@@ -19,7 +35,8 @@ dotnet run --project src/DesktopOps.Agent/DesktopOps.Agent.csproj
     "UserName": "",
     "InstallationDirectory": "",
     "PollIntervalMinutes": 30,
-    "ApiKey": ""
+    "ApiKey": "",
+    "AllowSelfUpdate": true
   }
 }
 ```
@@ -35,15 +52,18 @@ dotnet run --project src/DesktopOps.Agent/DesktopOps.Agent.csproj
 
 Self-update details: [Agent self-update](agent-self-update.md).
 
-## Tray actions
+## Tray menu
 
-- **Check for updates** – register + evaluate assignments
-- **Install pending updates** – backup / install / remove + report events
-- **Export diagnostics** – writes a support ZIP via `DesktopOps.Diagnostics`
-- **Exit** – stops the agent
+- **Konfiguration**
+- **Updates suchen...**
+- **Letzte Suche** (info)
+- **Programme neuinstallieren**
+- **Diagnose exportieren**
+- **Version** (info)
+- **Beenden**
 
 ## Prerequisites
 
-1. DesktopOps.Server is running
-2. Your username is a member of a group that has at least one assigned program with a published release
-3. Dev HTTPS certificate is trusted for local demos (`dotnet dev-certs https --trust`)
+- DesktopOps.Server reachable
+- User is a member of a group that has program assignments
+- For self-update: run a published `DesktopOps.Agent.exe`, not `dotnet run`

@@ -14,12 +14,17 @@
                         MenuActivation="RightClick"
                         TrayMouseDoubleClick="OnTrayDoubleClick">
             <tb:TaskbarIcon.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Check for updates" Click="OnCheckUpdatesClick" />
-                    <MenuItem Header="Install pending updates" Click="OnInstallClick" />
-                    <MenuItem Header="Export diagnostics" Click="OnExportDiagnosticsClick" />
+                <ContextMenu Opened="OnContextMenuOpened">
+                    <MenuItem Header="Konfiguration" Click="OnConfigurationClick" />
                     <Separator />
-                    <MenuItem Header="Exit" Click="OnExitClick" />
+                    <MenuItem Header="Updates suchen..." Click="OnSearchUpdatesClick" />
+                    <MenuItem x:Name="LastSearchMenuItem" Header="Letzte Suche: –" IsEnabled="False" />
+                    <MenuItem Header="Programme neuinstallieren" Click="OnReinstallClick" />
+                    <Separator />
+                    <MenuItem Header="Diagnose exportieren" Click="OnExportDiagnosticsClick" />
+                    <MenuItem x:Name="VersionMenuItem" Header="Version: –" IsEnabled="False" />
+                    <Separator />
+                    <MenuItem Header="Beenden" Click="OnExitClick" />
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>
         </tb:TaskbarIcon>

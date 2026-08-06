@@ -48,8 +48,9 @@ public sealed class PackageStorageService
             hasher.AppendData(buffer.AsSpan(0, read));
         }
 
+        await output.FlushAsync(cancellationToken);
         var hash = Convert.ToHexString(hasher.GetHashAndReset()).ToLowerInvariant();
-        var size = new FileInfo(absolutePath).Length;
+        var size = output.Length;
 
         return new StoredPackage(
             Path.Combine(safeProgramSlug, fileName),
