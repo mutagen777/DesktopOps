@@ -5,12 +5,12 @@
                 <NotAuthorized>
                     @if (context.User.Identity?.IsAuthenticated != true)
                     {
-                        <p class="page-lead">Anmeldung erforderlich (Windows-Authentifizierung).</p>
+                        <p class="page-lead">@L["LoginRequired"]</p>
                     }
                     else
                     {
-                        <p class="page-lead">Keine Berechtigung für diese Seite.</p>
-                        <p class="text-muted">Für Programme und Releases wird die Developer-AD-Gruppe benötigt. Für Gruppen und Zuweisungen die Manager- oder Developer-Gruppe.</p>
+                        <p class="page-lead">@L["Forbidden"]</p>
+                        <p class="text-muted">@L["ForbiddenHint"]</p>
                     }
                 </NotAuthorized>
             </AuthorizeRouteView>
@@ -18,8 +18,8 @@
         </Found>
         <NotFound>
             <LayoutView Layout="typeof(Layout.MainLayout)">
-                <p class="page-lead">Die Seite wurde nicht gefunden.</p>
-                <p><a href="">Zur Übersicht</a></p>
+                <p class="page-lead">@L["NotFound"]</p>
+                <p><a href="">@L["BackToOverview"]</a></p>
             </LayoutView>
         </NotFound>
     </Router>

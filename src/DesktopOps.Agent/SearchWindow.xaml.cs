@@ -1,4 +1,5 @@
 using System.Windows;
+using DesktopOps.Agent.Resources;
 using DesktopOps.Agent.Services;
 
 namespace DesktopOps.Agent;
@@ -15,6 +16,9 @@ public partial class SearchWindow : Window
     {
         _orchestrator = orchestrator;
         InitializeComponent();
+        Title = Loc.Get("SearchTitle");
+        StatusText.Text = Loc.Get("Searching");
+        CancelButton.Content = Loc.Get("Cancel");
         Loaded += OnLoaded;
         Closed += (_, _) => _cts.Dispose();
     }
@@ -32,12 +36,12 @@ public partial class SearchWindow : Window
             ResultCount = await _orchestrator.SearchUpdatesAsync(_cts.Token);
             if (ResultCount is null)
             {
-                StatusText.Text = "Server nicht erreichbar.";
+                StatusText.Text = Loc.Get("ServerUnreachable");
                 await Task.Delay(900);
             }
             else if (ResultCount == 0)
             {
-                StatusText.Text = "Keine Updates gefunden.";
+                StatusText.Text = Loc.Get("NoUpdatesFound");
                 await Task.Delay(700);
             }
 

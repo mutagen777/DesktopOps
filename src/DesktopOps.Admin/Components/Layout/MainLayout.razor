@@ -14,18 +14,18 @@
             <div>Admin</div>
             @if (!Security.Enabled)
             {
-                <div class="admin-user">Auth aus</div>
+                <div class="admin-user">@L["AuthOff"]</div>
             }
             else
             {
-                <div class="admin-user">@(CurrentUser ?? "nicht angemeldet")</div>
-                <div class="admin-debug-label">Konfig</div>
+                <div class="admin-user">@(CurrentUser ?? "—")</div>
+                <div class="admin-debug-label">@L["Config"]</div>
                 <div class="admin-user">M: @Security.ADGroup</div>
                 <div class="admin-user">D: @Security.DeveloperADGroup</div>
-                <div class="admin-debug-label">Rollen</div>
+                <div class="admin-debug-label">@L["Roles"]</div>
                 @if (RoleClaims.Count == 0)
                 {
-                    <div class="admin-user">keine Role-Claims</div>
+                    <div class="admin-user">@L["NoRoleClaims"]</div>
                 }
                 else
                 {
@@ -49,8 +49,8 @@
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    Ein unerwarteter Fehler ist aufgetreten.
-    <a href="." class="reload">Neu laden</a>
+    @L["UnexpectedError"]
+    <a href="." class="reload">@L["Reload"]</a>
     <span class="dismiss">🗙</span>
 </div>
 
@@ -84,32 +84,32 @@
             var relative = Navigation.ToBaseRelativePath(Navigation.Uri).Trim('/').ToLowerInvariant();
             if (string.IsNullOrEmpty(relative))
             {
-                return "Übersicht";
+                return L["Nav_Overview"];
             }
 
             if (relative.StartsWith("programs"))
             {
-                return "Programme";
+                return L["Nav_Programs"];
             }
 
             if (relative.StartsWith("groups"))
             {
-                return "Gruppen";
+                return L["Nav_Groups"];
             }
 
             if (relative.StartsWith("assignments"))
             {
-                return "Zuweisungen";
+                return L["Nav_Assignments"];
             }
 
             if (relative.StartsWith("releases"))
             {
-                return "Releases";
+                return L["Nav_Releases"];
             }
 
             if (relative.StartsWith("rollouts"))
             {
-                return "Rollouts";
+                return L["Nav_Rollouts"];
             }
 
             return "DesktopOps";

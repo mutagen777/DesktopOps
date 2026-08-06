@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
+using DesktopOps.Agent.Resources;
 using DesktopOps.Agent.Services;
 using MessageBox = System.Windows.MessageBox;
 
@@ -16,8 +17,16 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         TrayIcon.Icon = TrayIconFactory.Create();
-        TrayIcon.ToolTipText = "DesktopOps Agent";
+        TrayIcon.ToolTipText = Loc.Get("TrayTooltip");
         TrayIcon.Visibility = Visibility.Visible;
+
+        ConfigurationMenuItem.Header = Loc.Get("MenuConfiguration");
+        SearchUpdatesMenuItem.Header = Loc.Get("MenuSearchUpdates");
+        LastSearchMenuItem.Header = Loc.Get("LastSearchNone");
+        ReinstallMenuItem.Header = Loc.Get("MenuReinstall");
+        DiagnosticsMenuItem.Header = Loc.Get("MenuDiagnostics");
+        VersionMenuItem.Header = Loc.Format("Version", "–");
+        ExitMenuItem.Header = Loc.Get("MenuExit");
 
         Hide();
         Loaded += OnLoaded;
@@ -29,14 +38,14 @@ public partial class MainWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         TrayIcon.ShowBalloonTip(
-            "DesktopOps Agent",
-            "Läuft im Infobereich. Rechtsklick auf das blaue D-Symbol für Optionen.",
+            Loc.Get("TrayTooltip"),
+            Loc.Get("BalloonRunning"),
             Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
 
         if (Orchestrator is not null)
         {
             Orchestrator.UpdatesDiscovered += OnUpdatesDiscovered;
-            VersionMenuItem.Header = $"Version: {Orchestrator.AgentVersion}";
+            VersionMenuItem.Header = Loc.Format("Version", Orchestrator.AgentVersion);
         }
 
         Dispatcher.BeginInvoke(async () => await RunStartupAsync(), DispatcherPriority.ApplicationIdle);
@@ -62,8 +71,8 @@ public partial class MainWindow : Window
         if (count is null)
         {
             TrayIcon.ShowBalloonTip(
-                "DesktopOps",
-                "Server nicht erreichbar. Erneuter Versuch über die Suche.",
+                Loc.Get("TrayTooltip"),
+                Loc.Get("ServerUnreachableRetry"),
                 Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Warning);
             return;
         }
@@ -105,9 +114,9 @@ public partial class MainWindow : Window
     private void NotifyUpdatesAvailable(int count)
     {
         var text = count == 1
-            ? "1 Aktualisierung verfügbar. Doppelklick oder „Updates suchen…“."
-            : $"{count} Aktualisierungen verfügbar. Doppelklick oder „Updates suchen…“.";
-        TrayIcon.ShowBalloonTip("DesktopOps", text, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+            ? Loc.Get("UpdateAvailableOne")
+            : Loc.Format("UpdateAvailableMany", count);
+        TrayIcon.ShowBalloonTip(Loc.Get("TrayTooltip"), text, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
         ScheduleRemind();
     }
 
@@ -137,11 +146,11 @@ public partial class MainWindow : Window
     {
         var last = Orchestrator?.LastSearchUtc ?? _uiSettings.LastSearchUtc;
         LastSearchMenuItem.Header = last is null
-            ? "Letzte Suche: –"
-            : $"Letzte Suche: {last:g}";
+            ? Loc.Get("LastSearchNone")
+            : Loc.Format("LastSearch", last.Value.ToString("g"));
         if (Orchestrator is not null)
         {
-            VersionMenuItem.Header = $"Version: {Orchestrator.AgentVersion}";
+            VersionMenuItem.Header = Loc.Format("Version", Orchestrator.AgentVersion);
         }
     }
 
@@ -165,8 +174,8 @@ public partial class MainWindow : Window
         if (Orchestrator is null)
         {
             TrayIcon.ShowBalloonTip(
-                "DesktopOps",
-                "Agent startet noch. Bitte kurz warten.",
+                Loc.Get("TrayTooltip"),
+                Loc.Get("AgentStillStarting"),
                 Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Warning);
             return;
         }
@@ -178,8 +187,8 @@ public partial class MainWindow : Window
         if (search.ResultCount is null)
         {
             TrayIcon.ShowBalloonTip(
-                "DesktopOps",
-                "Server nicht erreichbar.",
+                Loc.Get("TrayTooltip"),
+                Loc.Get("ServerUnreachable"),
                 Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Warning);
             return;
         }
@@ -187,8 +196,8 @@ public partial class MainWindow : Window
         if (search.ResultCount == 0)
         {
             MessageBox.Show(
-                "Keine Updates verfügbar.",
-                "DesktopOps",
+                Loc.Get("NoUpdatesAvailable"),
+                Loc.Get("TrayTooltip"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
             return;
@@ -207,8 +216,8 @@ public partial class MainWindow : Window
         }
 
         var confirm = MessageBox.Show(
-            "Lokale Programm-Installationen entfernen und neu suchen?\n(Der Agent selbst bleibt erhalten.)",
-            "Programme neuinstallieren",
+            Loc.Get("ReinstallConfirm"),
+            Loc.Get("ReinstallTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes)
@@ -220,7 +229,11 @@ public partial class MainWindow : Window
         PersistLastSearch(Orchestrator);
         if (Orchestrator.PendingUpdates.Count == 0)
         {
-            MessageBox.Show("Keine Programme zum Neuinstallieren gefunden.", "DesktopOps", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                Loc.Get("NothingToReinstall"),
+                Loc.Get("TrayTooltip"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             return;
         }
 
@@ -238,8 +251,8 @@ public partial class MainWindow : Window
 
         var path = await Orchestrator.ExportDiagnosticsAsync();
         TrayIcon.ShowBalloonTip(
-            "DesktopOps",
-            $"Diagnose exportiert nach {path}",
+            Loc.Get("TrayTooltip"),
+            Loc.Format("DiagnosticsExported", path),
             Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
     }
 
@@ -274,8 +287,8 @@ public partial class MainWindow : Window
         }
 
         TrayIcon.ShowBalloonTip(
-            "DesktopOps",
-            "Agent-Update vorbereitet. Neustart…",
+            Loc.Get("TrayTooltip"),
+            Loc.Get("AgentUpdateRestart"),
             Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
         TrayIcon.Dispose();
         System.Windows.Application.Current.Shutdown();

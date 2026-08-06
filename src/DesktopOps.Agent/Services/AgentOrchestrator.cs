@@ -1,3 +1,4 @@
+using DesktopOps.Agent.Resources;
 using DesktopOps.Diagnostics;
 using DesktopOps.Updates;
 using Microsoft.Extensions.Logging;
@@ -141,7 +142,7 @@ public sealed class AgentOrchestrator
             cancellationToken.ThrowIfCancellationRequested();
             var candidate = pending[index];
             var label = FormatAction(candidate);
-            progress?.Report(new UpdateProgress(index + 1, total, label, "Vorbereitung…", (double)index / Math.Max(total, 1)));
+            progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressPreparing"), (double)index / Math.Max(total, 1)));
 
             try
             {
@@ -158,13 +159,13 @@ public sealed class AgentOrchestrator
                         continue;
                     }
 
-                    progress?.Report(new UpdateProgress(index + 1, total, label, "Agent-Update wird vorbereitet…", (index + 0.5) / Math.Max(total, 1)));
+                    progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressAgentPreparing"), (index + 0.5) / Math.Max(total, 1)));
                     var scheduled = await _selfUpdate.TryScheduleSelfUpdateAsync(candidate.Program, cancellationToken);
                     if (scheduled)
                     {
                         installedCount++;
                         _restartScheduled = true;
-                        progress?.Report(new UpdateProgress(index + 1, total, label, "Neustart wird geplant…", 1));
+                        progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressRestart"), 1));
                         break;
                     }
 
@@ -173,7 +174,7 @@ public sealed class AgentOrchestrator
 
                 if (candidate.Action == ProgramUpdateAction.Delete)
                 {
-                    progress?.Report(new UpdateProgress(index + 1, total, label, "Wird entfernt…", (index + 0.5) / Math.Max(total, 1)));
+                    progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressRemoving"), (index + 0.5) / Math.Max(total, 1)));
                     _installService.RemoveProgram(candidate.Program.Slug);
                     installedCount++;
                     continue;
@@ -186,12 +187,12 @@ public sealed class AgentOrchestrator
 
                 if (candidate.Action == ProgramUpdateAction.Update)
                 {
-                    progress?.Report(new UpdateProgress(index + 1, total, label, "Backup wird erstellt…", (index + 0.2) / Math.Max(total, 1)));
+                    progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressBackup"), (index + 0.2) / Math.Max(total, 1)));
                     _installService.BackupProgram(candidate.Program.Slug);
                     _installService.RemoveProgram(candidate.Program.Slug);
                 }
 
-                progress?.Report(new UpdateProgress(index + 1, total, label, "Download…", (index + 0.4) / Math.Max(total, 1)));
+                progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressDownload"), (index + 0.4) / Math.Max(total, 1)));
                 var release = candidate.Program.LatestRelease;
                 await _updateService.ReportStatusAsync(
                     release.Id,
@@ -200,7 +201,7 @@ public sealed class AgentOrchestrator
                     cancellationToken: cancellationToken);
 
                 var prepared = await _updateService.PrepareUpdateAsync(release, cancellationToken);
-                progress?.Report(new UpdateProgress(index + 1, total, label, "Installation…", (index + 0.7) / Math.Max(total, 1)));
+                progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressInstall"), (index + 0.7) / Math.Max(total, 1)));
                 var ok = await _installService.InstallFromZipAsync(
                     candidate.Program,
                     prepared.PackagePath,
@@ -214,7 +215,7 @@ public sealed class AgentOrchestrator
                         DeploymentStatus.Failed,
                         "Install or hash verification failed.",
                         cancellationToken: cancellationToken);
-                    progress?.Report(new UpdateProgress(index + 1, total, label, "Fehlgeschlagen", (index + 1.0) / Math.Max(total, 1)));
+                    progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressFailed"), (index + 1.0) / Math.Max(total, 1)));
                     continue;
                 }
 
@@ -225,7 +226,7 @@ public sealed class AgentOrchestrator
                     release.Version,
                     cancellationToken);
                 installedCount++;
-                progress?.Report(new UpdateProgress(index + 1, total, label, "Fertig", (index + 1.0) / Math.Max(total, 1)));
+                progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressDone"), (index + 1.0) / Math.Max(total, 1)));
             }
             catch (OperationCanceledException)
             {
@@ -321,12 +322,12 @@ public sealed class AgentOrchestrator
         return candidate.Action switch
         {
             ProgramUpdateAction.Add => string.IsNullOrWhiteSpace(version)
-                ? $"{name} - Installieren"
-                : $"{name} - {version} - Installieren",
+                ? Loc.Format("ActionInstall", name)
+                : Loc.Format("ActionInstallVer", name, version),
             ProgramUpdateAction.Update => string.IsNullOrWhiteSpace(version)
-                ? $"{name} - Aktualisieren"
-                : $"{name} - {version} - Aktualisieren",
-            ProgramUpdateAction.Delete => $"{name} - Deinstallieren",
+                ? Loc.Format("ActionUpdate", name)
+                : Loc.Format("ActionUpdateVer", name, version),
+            ProgramUpdateAction.Delete => Loc.Format("ActionUninstall", name),
             _ => name
         };
     }

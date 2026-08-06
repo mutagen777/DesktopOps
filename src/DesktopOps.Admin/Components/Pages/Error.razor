@@ -2,10 +2,10 @@
 @attribute [AllowAnonymous]
 @using System.Diagnostics
 
-<PageTitle>Error</PageTitle>
+<PageTitle>@L["ErrorTitle"]</PageTitle>
 
-<h1 class="text-danger">Fehler</h1>
-<h2 class="text-danger">Bei der Verarbeitung der Anfrage ist ein Fehler aufgetreten.</h2>
+<h1 class="text-danger">@L["ErrorTitle"]</h1>
+<h2 class="text-danger">@L["ErrorBody"]</h2>
 
 @if (ShowRequestId)
 {

@@ -15,16 +15,16 @@
                         TrayMouseDoubleClick="OnTrayDoubleClick">
             <tb:TaskbarIcon.ContextMenu>
                 <ContextMenu Opened="OnContextMenuOpened">
-                    <MenuItem Header="Konfiguration" Click="OnConfigurationClick" />
+                    <MenuItem x:Name="ConfigurationMenuItem" Click="OnConfigurationClick" />
                     <Separator />
-                    <MenuItem Header="Updates suchen..." Click="OnSearchUpdatesClick" />
-                    <MenuItem x:Name="LastSearchMenuItem" Header="Letzte Suche: –" IsEnabled="False" />
-                    <MenuItem Header="Programme neuinstallieren" Click="OnReinstallClick" />
+                    <MenuItem x:Name="SearchUpdatesMenuItem" Click="OnSearchUpdatesClick" />
+                    <MenuItem x:Name="LastSearchMenuItem" IsEnabled="False" />
+                    <MenuItem x:Name="ReinstallMenuItem" Click="OnReinstallClick" />
                     <Separator />
-                    <MenuItem Header="Diagnose exportieren" Click="OnExportDiagnosticsClick" />
-                    <MenuItem x:Name="VersionMenuItem" Header="Version: –" IsEnabled="False" />
+                    <MenuItem x:Name="DiagnosticsMenuItem" Click="OnExportDiagnosticsClick" />
+                    <MenuItem x:Name="VersionMenuItem" IsEnabled="False" />
                     <Separator />
-                    <MenuItem Header="Beenden" Click="OnExitClick" />
+                    <MenuItem x:Name="ExitMenuItem" Click="OnExitClick" />
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>
         </tb:TaskbarIcon>

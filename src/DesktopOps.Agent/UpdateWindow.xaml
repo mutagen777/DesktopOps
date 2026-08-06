@@ -18,7 +18,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Folgende Aktionen stehen aus:" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <TextBlock x:Name="PendingHeader" FontWeight="SemiBold" Margin="0,0,0,8" />
 
         <ListBox x:Name="ActionList" Grid.Row="1" Margin="0,0,0,12" />
 
@@ -26,8 +26,8 @@
         <ProgressBar x:Name="Progress" Grid.Row="3" Height="18" Minimum="0" Maximum="1" Margin="0,0,0,12" />
 
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="ExecuteButton" Width="110" Margin="0,0,8,0" Content="Ausführen" IsDefault="True" Click="OnExecuteClick" />
-            <Button x:Name="CloseButton" Width="110" Content="Abbrechen" IsCancel="True" Click="OnCloseClick" />
+            <Button x:Name="ExecuteButton" Width="110" Margin="0,0,8,0" IsDefault="True" Click="OnExecuteClick" />
+            <Button x:Name="CloseButton" Width="110" IsCancel="True" Click="OnCloseClick" />
         </StackPanel>
     </Grid>
 </Window>

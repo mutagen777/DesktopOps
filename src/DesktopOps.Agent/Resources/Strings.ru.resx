@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="TrayTooltip" xml:space="preserve"><value>DesktopOps Agent</value></data>
+  <data name="BalloonRunning" xml:space="preserve"><value>Работает в области уведомлений. ПКМ по синей иконке D — меню.</value></data>
+  <data name="ServerUnreachableRetry" xml:space="preserve"><value>Сервер недоступен. Повторите через поиск.</value></data>
+  <data name="ServerUnreachable" xml:space="preserve"><value>Сервер недоступен.</value></data>
+  <data name="UpdateAvailableOne" xml:space="preserve"><value>Доступно 1 обновление. Двойной щелчок или «Поиск обновлений…».</value></data>
+  <data name="UpdateAvailableMany" xml:space="preserve"><value>Доступно обновлений: {0}. Двойной щелчок или «Поиск обновлений…».</value></data>
+  <data name="LastSearchNone" xml:space="preserve"><value>Последний поиск: –</value></data>
+  <data name="LastSearch" xml:space="preserve"><value>Последний поиск: {0}</value></data>
+  <data name="Version" xml:space="preserve"><value>Версия: {0}</value></data>
+  <data name="MenuConfiguration" xml:space="preserve"><value>Конфигурация</value></data>
+  <data name="MenuSearchUpdates" xml:space="preserve"><value>Поиск обновлений…</value></data>
+  <data name="MenuReinstall" xml:space="preserve"><value>Переустановить программы</value></data>
+  <data name="MenuDiagnostics" xml:space="preserve"><value>Экспорт диагностики</value></data>
+  <data name="MenuExit" xml:space="preserve"><value>Выход</value></data>
+  <data name="AgentStillStarting" xml:space="preserve"><value>Агент ещё запускается. Подождите.</value></data>
+  <data name="NoUpdatesAvailable" xml:space="preserve"><value>Обновлений нет.</value></data>
+  <data name="ReinstallConfirm" xml:space="preserve"><value>Удалить локальные установки и искать снова?
+(Сам агент сохраняется.)</value></data>
+  <data name="ReinstallTitle" xml:space="preserve"><value>Переустановить программы</value></data>
+  <data name="NothingToReinstall" xml:space="preserve"><value>Нет программ для переустановки.</value></data>
+  <data name="DiagnosticsExported" xml:space="preserve"><value>Диагностика экспортирована в {0}</value></data>
+  <data name="AgentUpdateRestart" xml:space="preserve"><value>Обновление агента подготовлено. Перезапуск…</value></data>
+  <data name="SearchTitle" xml:space="preserve"><value>DesktopOps – Поиск обновлений</value></data>
+  <data name="Searching" xml:space="preserve"><value>Поиск обновлений…</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="NoUpdatesFound" xml:space="preserve"><value>Обновления не найдены.</value></data>
+  <data name="UpdateTitle" xml:space="preserve"><value>DesktopOps – Обновления</value></data>
+  <data name="PendingActions" xml:space="preserve"><value>Ожидающие действия:</value></data>
+  <data name="Execute" xml:space="preserve"><value>Выполнить</value></data>
+  <data name="Close" xml:space="preserve"><value>Закрыть</value></data>
+  <data name="NoPendingActions" xml:space="preserve"><value>Нет ожидающих действий.</value></data>
+  <data name="ActionsReady" xml:space="preserve"><value>Готово действий: {0}.</value></data>
+  <data name="ProgressStep" xml:space="preserve"><value>{0} / {1} – {2}: {3}</value></data>
+  <data name="NothingInstalled" xml:space="preserve"><value>Ничего не установлено.</value></data>
+  <data name="ActionsDone" xml:space="preserve"><value>Выполнено действий: {0}.</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>Отменено.</value></data>
+  <data name="ConfigTitle" xml:space="preserve"><value>DesktopOps – Конфигурация</value></data>
+  <data name="Save" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="TabGeneral" xml:space="preserve"><value>Общие</value></data>
+  <data name="TabPrograms" xml:space="preserve"><value>Программы</value></data>
+  <data name="InstallFolder" xml:space="preserve"><value>Папка установки</value></data>
+  <data name="LastSearchLabel" xml:space="preserve"><value>Последний поиск</value></data>
+  <data name="SearchEllipsis" xml:space="preserve"><value>Поиск…</value></data>
+  <data name="AgentVersion" xml:space="preserve"><value>Версия агента</value></data>
+  <data name="AutoInstall" xml:space="preserve"><value>Устанавливать обновления автоматически при запуске</value></data>
+  <data name="NotifyUpdates" xml:space="preserve"><value>Уведомлять при найденных обновлениях</value></data>
+  <data name="NoSearchYet" xml:space="preserve"><value>Поиска ещё не было</value></data>
+  <data name="ColName" xml:space="preserve"><value>Имя</value></data>
+  <data name="ColLatest" xml:space="preserve"><value>Последняя версия</value></data>
+  <data name="ColInstalled" xml:space="preserve"><value>Установленная версия</value></data>
+  <data name="ActionInstall" xml:space="preserve"><value>{0} - Установить</value></data>
+  <data name="ActionInstallVer" xml:space="preserve"><value>{0} - {1} - Установить</value></data>
+  <data name="ActionUpdate" xml:space="preserve"><value>{0} - Обновить</value></data>
+  <data name="ActionUpdateVer" xml:space="preserve"><value>{0} - {1} - Обновить</value></data>
+  <data name="ActionUninstall" xml:space="preserve"><value>{0} - Удалить</value></data>
+  <data name="ProgressPreparing" xml:space="preserve"><value>Подготовка…</value></data>
+  <data name="ProgressAgentPreparing" xml:space="preserve"><value>Подготовка обновления агента…</value></data>
+  <data name="ProgressRestart" xml:space="preserve"><value>Планирование перезапуска…</value></data>
+  <data name="ProgressRemoving" xml:space="preserve"><value>Удаление…</value></data>
+  <data name="ProgressBackup" xml:space="preserve"><value>Создание резервной копии…</value></data>
+  <data name="ProgressDownload" xml:space="preserve"><value>Загрузка…</value></data>
+  <data name="ProgressInstall" xml:space="preserve"><value>Установка…</value></data>
+  <data name="ProgressFailed" xml:space="preserve"><value>Ошибка</value></data>
+  <data name="ProgressDone" xml:space="preserve"><value>Готово</value></data>
+</root>

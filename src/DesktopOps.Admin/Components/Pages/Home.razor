@@ -2,22 +2,22 @@
 @attribute [Authorize(Policy = "Manager")]
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 
-<PageTitle>Übersicht</PageTitle>
+<PageTitle>@L["Nav_Overview"]</PageTitle>
 
-<p class="page-lead">Kurzüberblick über Programme, Gruppen, Releases und Zuweisungen.</p>
+<p class="page-lead">@L["Lead_Overview"]</p>
 
 @if (draftReleaseCount > 0 || stagedRolloutCount > 0)
 {
     <div class="panel dashboard-status">
-        <div class="panel-title">Status</div>
+        <div class="panel-title">@L["Status"]</div>
         <ul class="mb-0">
             @if (draftReleaseCount > 0)
             {
-                <li><a href="releases">@draftReleaseCount Entwurf-Release(s)</a> warten auf Veröffentlichung</li>
+                <li><a href="releases">@L["DraftReleasesWaiting", draftReleaseCount]</a></li>
             }
             @if (stagedRolloutCount > 0)
             {
-                <li><a href="rollouts">@stagedRolloutCount gestaffelte(r) Rollout(s)</a> unter 100&nbsp;%</li>
+                <li><a href="rollouts">@L["StagedRolloutsBelow", stagedRolloutCount]</a></li>
             }
         </ul>
     </div>
@@ -25,13 +25,13 @@
 
 <div class="dashboard-wrap">
     <div class="dashboard-card">
-        <h2 class="dashboard-card-title"><a href="programs">Programme</a></h2>
+        <h2 class="dashboard-card-title"><a href="programs">@L["Nav_Programs"]</a></h2>
         <div class="dashboard-card-metric">@programCount</div>
-        <div class="dashboard-card-subtitle">Zuletzt</div>
+        <div class="dashboard-card-subtitle">@L["Recent"]</div>
         <ul>
             @if (latestPrograms.Count == 0)
             {
-                <li class="dashboard-empty">Noch keine</li>
+                <li class="dashboard-empty">@L["NoneYet"]</li>
             }
             else
             {
@@ -44,13 +44,13 @@
     </div>
 
     <div class="dashboard-card">
-        <h2 class="dashboard-card-title"><a href="groups">Gruppen</a></h2>
+        <h2 class="dashboard-card-title"><a href="groups">@L["Nav_Groups"]</a></h2>
         <div class="dashboard-card-metric">@groupCount</div>
-        <div class="dashboard-card-subtitle">Zuletzt</div>
+        <div class="dashboard-card-subtitle">@L["Recent"]</div>
         <ul>
             @if (latestGroups.Count == 0)
             {
-                <li class="dashboard-empty">Noch keine</li>
+                <li class="dashboard-empty">@L["NoneYet"]</li>
             }
             else
             {
@@ -63,13 +63,13 @@
     </div>
 
     <div class="dashboard-card">
-        <h2 class="dashboard-card-title"><a href="releases">Veröffentlichte Releases</a></h2>
+        <h2 class="dashboard-card-title"><a href="releases">@L["PublishedReleases"]</a></h2>
         <div class="dashboard-card-metric">@publishedReleaseCount</div>
-        <div class="dashboard-card-subtitle">Zuletzt</div>
+        <div class="dashboard-card-subtitle">@L["Recent"]</div>
         <ul>
             @if (latestReleases.Count == 0)
             {
-                <li class="dashboard-empty">Noch keine</li>
+                <li class="dashboard-empty">@L["NoneYet"]</li>
             }
             else
             {
@@ -79,7 +79,7 @@
                         <a href="releases">@release.Program?.Name @release.Version</a>
                         @if (release.PublishedAtUtc is null)
                         {
-                            <span class="status-draft">Entwurf</span>
+                            <span class="status-draft">@L["Draft"]</span>
                         }
                     </li>
                 }
@@ -88,12 +88,12 @@
     </div>
 
     <div class="dashboard-card">
-        <h2 class="dashboard-card-title"><a href="assignments">Zuweisungen</a></h2>
+        <h2 class="dashboard-card-title"><a href="assignments">@L["Nav_Assignments"]</a></h2>
         <div class="dashboard-card-metric">@assignmentCount</div>
-        <div class="dashboard-card-subtitle">Aktionen</div>
+        <div class="dashboard-card-subtitle">@L["Actions"]</div>
         <ul>
-            <li><a href="releases">Release hochladen / veröffentlichen</a></li>
-            <li><a href="rollouts">Rollouts öffnen</a></li>
+            <li><a href="releases">@L["UploadPublishRelease"]</a></li>
+            <li><a href="rollouts">@L["OpenRollouts"]</a></li>
         </ul>
     </div>
 </div>

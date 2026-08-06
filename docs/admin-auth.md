@@ -16,7 +16,9 @@ In `src/DesktopOps.Admin/appsettings.json` (or environment-specific override):
 
 Both group names are required when `Enabled` is `true`. They must match the **role claim** Windows issues for that group (compare with `whoami /groups` and the sidebar debug block).
 
-Local demo keeps `"Enabled": false` — policies always succeed and the sidebar shows `Auth aus`.
+Local demo keeps `"Enabled": false` — policies always succeed and the sidebar shows `Auth off` / `Auth aus` (depending on UI language).
+
+UI language follows the browser `Accept-Language` (typically the Windows display language). See [Localization](localization.md).
 
 ## Checklist
 

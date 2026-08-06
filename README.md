@@ -87,6 +87,7 @@ Runtime = DesktopOpsWpfBootstrapper.Initialize(this, options =>
 
 - [Architecture](docs/architecture.md)
 - [Admin authentication](docs/admin-auth.md)
+- [Localization](docs/localization.md)
 - [Directory group sync](docs/directory-sync.md)
 - [Server API](docs/server-api.md)
 - [Deployment model](docs/deployment-model.md)

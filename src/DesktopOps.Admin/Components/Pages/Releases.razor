@@ -4,17 +4,17 @@
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 @inject PackageStorageService PackageStorage
 
-<PageTitle>Releases</PageTitle>
+<PageTitle>@L["Nav_Releases"]</PageTitle>
 
-<p class="page-lead">ZIP hochladen und veröffentlichen. Mit Rollout-% nur einen Teil der zugewiesenen Benutzer freischalten.</p>
+<p class="page-lead">@L["Lead_Releases"]</p>
 
 <div class="panel">
-    <div class="panel-title">Release hochladen</div>
+    <div class="panel-title">@L["UploadRelease"]</div>
     <div class="row g-3 mb-3">
         <div class="col-md-4">
-            <label class="form-label">Programm</label>
+            <label class="form-label">@L["Program"]</label>
             <InputSelect class="form-select" @bind-Value="selectedProgramId">
-                <option value="">Programm wählen</option>
+                <option value="">@L["SelectProgram"]</option>
                 @foreach (var program in programs)
                 {
                     <option value="@program.Id">@program.Name</option>
@@ -22,41 +22,41 @@
             </InputSelect>
         </div>
         <div class="col-md-2">
-            <label class="form-label">Version</label>
+            <label class="form-label">@L["Version"]</label>
             <InputText class="form-control" @bind-Value="version" />
         </div>
         <div class="col-md-3">
-            <label class="form-label">Paket (ZIP)</label>
+            <label class="form-label">@L["PackageZip"]</label>
             <InputFile OnChange="OnFileSelected" />
         </div>
         <div class="col-md-3">
-            <label class="form-label">Release Notes</label>
+            <label class="form-label">@L["ReleaseNotes"]</label>
             <InputText class="form-control" @bind-Value="releaseNotes" />
         </div>
         <div class="col-md-2">
-            <label class="form-label">Rollout %</label>
+            <label class="form-label">@L["RolloutPercent"]</label>
             <InputNumber class="form-control" @bind-Value="rolloutPercent" min="0" max="100" />
         </div>
     </div>
     <div class="mb-3">
         <label class="form-check-row">
             <InputCheckbox class="form-check-input" @bind-Value="isMandatory" />
-            <span>Pflicht-Update</span>
+            <span>@L["MandatoryUpdate"]</span>
         </label>
     </div>
-    <button class="btn btn-primary" @onclick="CreateReleaseAsync">Hochladen</button>
+    <button class="btn btn-primary" @onclick="CreateReleaseAsync">@L["Upload"]</button>
 </div>
 
 <div class="table-panel">
     <table class="table">
         <thead>
             <tr>
-                <th>Programm</th>
-                <th>Version</th>
-                <th>SHA-256</th>
-                <th>Größe</th>
-                <th>Rollout</th>
-                <th>Status</th>
+                <th>@L["Program"]</th>
+                <th>@L["Version"]</th>
+                <th>@L["Sha256"]</th>
+                <th>@L["Size"]</th>
+                <th>@L["Rollout"]</th>
+                <th>@L["Status"]</th>
                 <th></th>
             </tr>
         </thead>
@@ -64,7 +64,7 @@
             @if (releases.Count == 0)
             {
                 <tr>
-                    <td colspan="7" class="text-muted">Noch keine Releases.</td>
+                    <td colspan="7" class="text-muted">@L["NoReleases"]</td>
                 </tr>
             }
             else
@@ -93,17 +93,17 @@
                         <td>
                             @if (release.PublishedAtUtc is null)
                             {
-                                <span class="status-draft">Entwurf</span>
+                                <span class="status-draft">@L["Draft"]</span>
                             }
                             else
                             {
-                                <span class="status-published">Veröffentlicht</span>
+                                <span class="status-published">@L["Published"]</span>
                             }
                         </td>
                         <td class="text-end">
                             @if (release.PublishedAtUtc is null)
                             {
-                                <button class="btn btn-sm btn-primary" @onclick="() => PublishAsync(release.Id)">Veröffentlichen</button>
+                                <button class="btn btn-sm btn-primary" @onclick="() => PublishAsync(release.Id)">@L["Publish"]</button>
                             }
                         </td>
                     </tr>

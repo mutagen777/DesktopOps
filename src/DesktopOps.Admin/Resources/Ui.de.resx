@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav_Overview" xml:space="preserve"><value>Übersicht</value></data>
+  <data name="Nav_Programs" xml:space="preserve"><value>Programme</value></data>
+  <data name="Nav_Groups" xml:space="preserve"><value>Gruppen</value></data>
+  <data name="Nav_Assignments" xml:space="preserve"><value>Zuweisungen</value></data>
+  <data name="Nav_Releases" xml:space="preserve"><value>Releases</value></data>
+  <data name="Nav_Rollouts" xml:space="preserve"><value>Rollouts</value></data>
+  <data name="Lead_Overview" xml:space="preserve"><value>Kurzüberblick über Programme, Gruppen, Releases und Zuweisungen.</value></data>
+  <data name="Lead_Programs" xml:space="preserve"><value>Programme anlegen, die Gruppen zugewiesen und vom Agent ausgeliefert werden.</value></data>
+  <data name="Lead_Groups" xml:space="preserve"><value>Benutzer in einer Gruppe erhalten alle Programme, die dieser Gruppe zugewiesen sind. Optional: SID auflösen und Mitglieder aus einer AD-/Windows-Gruppe übernehmen.</value></data>
+  <data name="Lead_Assignments" xml:space="preserve"><value>Programm einer Gruppe zuweisen – alle Mitglieder erhalten die veröffentlichten Releases.</value></data>
+  <data name="Lead_Releases" xml:space="preserve"><value>ZIP hochladen und veröffentlichen. Mit Rollout-% nur einen Teil der zugewiesenen Benutzer freischalten.</value></data>
+  <data name="Lead_Rollouts" xml:space="preserve"><value>Statusmeldungen der Agents nach Download und Installation.</value></data>
+  <data name="Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Recent" xml:space="preserve"><value>Zuletzt</value></data>
+  <data name="Actions" xml:space="preserve"><value>Aktionen</value></data>
+  <data name="NoneYet" xml:space="preserve"><value>Noch keine</value></data>
+  <data name="PublishedReleases" xml:space="preserve"><value>Veröffentlichte Releases</value></data>
+  <data name="Draft" xml:space="preserve"><value>Entwurf</value></data>
+  <data name="Published" xml:space="preserve"><value>Veröffentlicht</value></data>
+  <data name="UploadPublishRelease" xml:space="preserve"><value>Release hochladen / veröffentlichen</value></data>
+  <data name="OpenRollouts" xml:space="preserve"><value>Rollouts öffnen</value></data>
+  <data name="DraftReleasesWaiting" xml:space="preserve"><value>{0} Entwurf-Release(s) warten auf Veröffentlichung</value></data>
+  <data name="StagedRolloutsBelow" xml:space="preserve"><value>{0} gestaffelte(r) Rollout(s) unter 100 %</value></data>
+  <data name="CreateProgram" xml:space="preserve"><value>Programm anlegen</value></data>
+  <data name="Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Slug" xml:space="preserve"><value>Slug</value></data>
+  <data name="ShortName" xml:space="preserve"><value>Kurzname</value></data>
+  <data name="Description" xml:space="preserve"><value>Beschreibung</value></data>
+  <data name="Add" xml:space="preserve"><value>Hinzufügen</value></data>
+  <data name="NoPrograms" xml:space="preserve"><value>Noch keine Programme.</value></data>
+  <data name="CreateGroup" xml:space="preserve"><value>Gruppe anlegen</value></data>
+  <data name="AdGroupOptional" xml:space="preserve"><value>AD-Gruppe (optional)</value></data>
+  <data name="UsersCommaSeparated" xml:space="preserve"><value>Benutzer (kommagetrennt)</value></data>
+  <data name="NoGroups" xml:space="preserve"><value>Noch keine Gruppen.</value></data>
+  <data name="NoDescription" xml:space="preserve"><value>Keine Beschreibung</value></data>
+  <data name="Members" xml:space="preserve"><value>Mitglieder ({0}):</value></data>
+  <data name="AddUser" xml:space="preserve"><value>Benutzer hinzufügen</value></data>
+  <data name="AdWindowsGroup" xml:space="preserve"><value>AD-/Windows-Gruppe</value></data>
+  <data name="SyncFromAd" xml:space="preserve"><value>Aus AD synchronisieren</value></data>
+  <data name="ResolveSids" xml:space="preserve"><value>SIDs auflösen</value></data>
+  <data name="DirectoryWindowsOnly" xml:space="preserve"><value>Verzeichnisdienste nur unter Windows verfügbar.</value></data>
+  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Gruppe</value></data>
+  <data name="PlaceholderUsers" xml:space="preserve"><value>z. B. peke, alice</value></data>
+  <data name="PlaceholderUser" xml:space="preserve"><value>DOMAIN\user oder samAccountName</value></data>
+  <data name="PlaceholderAdUsers" xml:space="preserve"><value>DOMAIN\DesktopOps-Users</value></data>
+  <data name="GroupCreated" xml:space="preserve"><value>Gruppe angelegt ({0} Mitglied(er)).</value></data>
+  <data name="UserAdded" xml:space="preserve"><value>Benutzer {0} hinzugefügt.</value></data>
+  <data name="UserAddedNoSid" xml:space="preserve"><value>Benutzer {0} hinzugefügt (ohne SID).</value></data>
+  <data name="AdGroupMissing" xml:space="preserve"><value>AD-Gruppenname fehlt.</value></data>
+  <data name="NoMembersInAd" xml:space="preserve"><value>Keine Mitglieder in „{0}“ gefunden (oder Gruppe nicht erreichbar).</value></data>
+  <data name="AdSyncResult" xml:space="preserve"><value>AD-Sync „{0}“: {1} neu, {2} SID aktualisiert, {3} in AD.</value></data>
+  <data name="NoSidsResolved" xml:space="preserve"><value>Keine neuen SIDs aufgelöst.</value></data>
+  <data name="SidsResolved" xml:space="preserve"><value>{0} SID(s) aufgelöst.</value></data>
+  <data name="CreateAssignment" xml:space="preserve"><value>Zuweisung anlegen</value></data>
+  <data name="SelectProgram" xml:space="preserve"><value>Programm wählen</value></data>
+  <data name="SelectGroup" xml:space="preserve"><value>Gruppe wählen</value></data>
+  <data name="Assign" xml:space="preserve"><value>Zuweisen</value></data>
+  <data name="NoAssignments" xml:space="preserve"><value>Noch keine Zuweisungen.</value></data>
+  <data name="Program" xml:space="preserve"><value>Programm</value></data>
+  <data name="Group" xml:space="preserve"><value>Gruppe</value></data>
+  <data name="UploadRelease" xml:space="preserve"><value>Release hochladen</value></data>
+  <data name="Version" xml:space="preserve"><value>Version</value></data>
+  <data name="PackageZip" xml:space="preserve"><value>Paket (ZIP)</value></data>
+  <data name="ReleaseNotes" xml:space="preserve"><value>Release Notes</value></data>
+  <data name="RolloutPercent" xml:space="preserve"><value>Rollout %</value></data>
+  <data name="MandatoryUpdate" xml:space="preserve"><value>Pflicht-Update</value></data>
+  <data name="Upload" xml:space="preserve"><value>Hochladen</value></data>
+  <data name="NoReleases" xml:space="preserve"><value>Noch keine Releases.</value></data>
+  <data name="Size" xml:space="preserve"><value>Größe</value></data>
+  <data name="Rollout" xml:space="preserve"><value>Rollout</value></data>
+  <data name="Publish" xml:space="preserve"><value>Veröffentlichen</value></data>
+  <data name="Sha256" xml:space="preserve"><value>SHA-256</value></data>
+  <data name="TimeUtc" xml:space="preserve"><value>Zeit (UTC)</value></data>
+  <data name="User" xml:space="preserve"><value>Benutzer</value></data>
+  <data name="Machine" xml:space="preserve"><value>Rechner</value></data>
+  <data name="Message" xml:space="preserve"><value>Meldung</value></data>
+  <data name="NoRolloutEvents" xml:space="preserve"><value>Noch keine Rollout-Ereignisse.</value></data>
+  <data name="AuthOff" xml:space="preserve"><value>Auth aus</value></data>
+  <data name="Config" xml:space="preserve"><value>Konfig</value></data>
+  <data name="Roles" xml:space="preserve"><value>Rollen</value></data>
+  <data name="NoRoleClaims" xml:space="preserve"><value>keine Role-Claims</value></data>
+  <data name="Reload" xml:space="preserve"><value>Neu laden</value></data>
+  <data name="UnexpectedError" xml:space="preserve"><value>Ein unerwarteter Fehler ist aufgetreten.</value></data>
+  <data name="ErrorTitle" xml:space="preserve"><value>Fehler</value></data>
+  <data name="ErrorBody" xml:space="preserve"><value>Bei der Verarbeitung der Anfrage ist ein Fehler aufgetreten.</value></data>
+  <data name="NotFound" xml:space="preserve"><value>Die Seite wurde nicht gefunden.</value></data>
+  <data name="BackToOverview" xml:space="preserve"><value>Zur Übersicht</value></data>
+  <data name="LoginRequired" xml:space="preserve"><value>Anmeldung erforderlich (Windows-Authentifizierung).</value></data>
+  <data name="Forbidden" xml:space="preserve"><value>Keine Berechtigung für diese Seite.</value></data>
+  <data name="ForbiddenHint" xml:space="preserve"><value>Für Programme und Releases wird die Developer-AD-Gruppe benötigt. Für Gruppen und Zuweisungen die Manager- oder Developer-Gruppe.</value></data>
+</root>

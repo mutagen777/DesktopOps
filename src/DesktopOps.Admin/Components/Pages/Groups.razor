@@ -4,9 +4,9 @@
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 @inject IDirectoryAccountLookup DirectoryLookup
 
-<PageTitle>Gruppen</PageTitle>
+<PageTitle>@L["Nav_Groups"]</PageTitle>
 
-<p class="page-lead">Benutzer in einer Gruppe erhalten alle Programme, die dieser Gruppe zugewiesen sind. Optional: SID auflösen und Mitglieder aus einer AD-/Windows-Gruppe übernehmen.</p>
+<p class="page-lead">@L["Lead_Groups"]</p>
 
 @if (!string.IsNullOrWhiteSpace(statusMessage))
 {
@@ -14,27 +14,27 @@
 }
 
 <div class="panel">
-    <div class="panel-title">Gruppe anlegen</div>
+    <div class="panel-title">@L["CreateGroup"]</div>
     <EditForm Model="newGroup" OnValidSubmit="CreateGroupAsync">
         <div class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">Name</label>
+                <label class="form-label">@L["Name"]</label>
                 <InputText class="form-control" @bind-Value="newGroup.Name" />
             </div>
             <div class="col-md-4">
-                <label class="form-label">Beschreibung</label>
+                <label class="form-label">@L["Description"]</label>
                 <InputText class="form-control" @bind-Value="newGroup.Description" />
             </div>
             <div class="col-md-4">
-                <label class="form-label">AD-Gruppe (optional)</label>
-                <InputText class="form-control" @bind-Value="newGroup.ActiveDirectoryGroup" placeholder="DOMAIN\Gruppe" />
+                <label class="form-label">@L["AdGroupOptional"]</label>
+                <InputText class="form-control" @bind-Value="newGroup.ActiveDirectoryGroup" placeholder="@L["PlaceholderAdGroup"]" />
             </div>
             <div class="col-md-8">
-                <label class="form-label">Benutzer (kommagetrennt)</label>
-                <InputText class="form-control" @bind-Value="newGroup.UserNames" placeholder="z. B. peke, alice" />
+                <label class="form-label">@L["UsersCommaSeparated"]</label>
+                <InputText class="form-control" @bind-Value="newGroup.UserNames" placeholder="@L["PlaceholderUsers"]" />
             </div>
             <div class="col-md-4 d-flex align-items-end">
-                <button class="btn btn-primary w-100" type="submit">Hinzufügen</button>
+                <button class="btn btn-primary w-100" type="submit">@L["Add"]</button>
             </div>
         </div>
     </EditForm>
@@ -42,16 +42,16 @@
 
 @if (groups.Count == 0)
 {
-    <p class="empty-state">Noch keine Gruppen.</p>
+    <p class="empty-state">@L["NoGroups"]</p>
 }
 
 @foreach (var group in groups)
 {
     <div class="panel">
         <h3 style="margin:0;font-size:1.1rem;">@group.Name</h3>
-        <p class="group-meta">@(string.IsNullOrWhiteSpace(group.Description) ? "Keine Beschreibung" : group.Description)</p>
+        <p class="group-meta">@(string.IsNullOrWhiteSpace(group.Description) ? L["NoDescription"].Value : group.Description)</p>
         <div class="group-members">
-            <strong>Mitglieder (@group.Members.Count):</strong>
+            <strong>@L["Members", group.Members.Count]</strong>
             @if (group.Members.Count == 0)
             {
                 <span> —</span>
@@ -75,22 +75,22 @@
 
         <div class="row g-2 align-items-end mb-2">
             <div class="col-md-4">
-                <label class="form-label">Benutzer hinzufügen</label>
+                <label class="form-label">@L["AddUser"]</label>
                 <input class="form-control"
-                       placeholder="DOMAIN\user oder samAccountName"
+                       placeholder="@L["PlaceholderUser"]"
                        value="@GetPendingMember(group.Id)"
                        @onchange="e => SetPendingMember(group.Id, e.Value?.ToString())" />
             </div>
             <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" @onclick="() => AddMemberAsync(group.Id)">Hinzufügen</button>
+                <button class="btn btn-outline-secondary w-100" @onclick="() => AddMemberAsync(group.Id)">@L["Add"]</button>
             </div>
         </div>
 
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">AD-/Windows-Gruppe</label>
+                <label class="form-label">@L["AdWindowsGroup"]</label>
                 <input class="form-control"
-                       placeholder="DOMAIN\DesktopOps-Users"
+                       placeholder="@L["PlaceholderAdUsers"]"
                        value="@GetPendingAdGroup(group.Id, group.ActiveDirectoryGroup)"
                        @onchange="e => SetPendingAdGroup(group.Id, e.Value?.ToString())" />
             </div>
@@ -98,20 +98,20 @@
                 <button class="btn btn-outline-primary w-100"
                         disabled="@(!DirectoryLookup.IsAvailable)"
                         @onclick="() => SyncFromDirectoryAsync(group.Id)">
-                    Aus AD synchronisieren
+                    @L["SyncFromAd"]
                 </button>
             </div>
             <div class="col-md-3">
                 <button class="btn btn-outline-secondary w-100"
                         disabled="@(!DirectoryLookup.IsAvailable)"
                         @onclick="() => ResolveMissingSidsAsync(group.Id)">
-                    SIDs auflösen
+                    @L["ResolveSids"]
                 </button>
             </div>
         </div>
         @if (!DirectoryLookup.IsAvailable)
         {
-            <p class="group-meta mt-2 mb-0">Verzeichnisdienste nur unter Windows verfügbar.</p>
+            <p class="group-meta mt-2 mb-0">@L["DirectoryWindowsOnly"]</p>
         }
     </div>
 }
@@ -152,7 +152,7 @@
         newGroup.Description = string.Empty;
         newGroup.ActiveDirectoryGroup = string.Empty;
         newGroup.UserNames = string.Empty;
-        statusMessage = $"Gruppe angelegt ({members.Count} Mitglied(er)).";
+        statusMessage = L["GroupCreated", members.Count];
         await LoadAsync();
     }
 
@@ -175,8 +175,8 @@
             dbContext.UserGroupMembers.Add(member);
             await dbContext.SaveChangesAsync();
             statusMessage = string.IsNullOrWhiteSpace(member.WindowsSid)
-                ? $"Benutzer {member.UserName} hinzugefügt (ohne SID)."
-                : $"Benutzer {member.UserName} hinzugefügt.";
+                ? L["UserAddedNoSid", member.UserName]
+                : L["UserAdded", member.UserName];
         }
 
         pendingMembers[groupId] = string.Empty;
@@ -189,14 +189,14 @@
         var adGroupName = GetPendingAdGroup(groupId, groups.FirstOrDefault(item => item.Id == groupId)?.ActiveDirectoryGroup);
         if (string.IsNullOrWhiteSpace(adGroupName))
         {
-            statusMessage = "AD-Gruppenname fehlt.";
+            statusMessage = L["AdGroupMissing"];
             return;
         }
 
         var accounts = DirectoryLookup.GetGroupMembers(adGroupName);
         if (accounts.Count == 0)
         {
-            statusMessage = $"Keine Mitglieder in „{adGroupName}“ gefunden (oder Gruppe nicht erreichbar).";
+            statusMessage = L["NoMembersInAd", adGroupName];
             return;
         }
 
@@ -234,7 +234,7 @@
 
         await dbContext.SaveChangesAsync();
         pendingAdGroups[groupId] = adGroupName.Trim();
-        statusMessage = $"AD-Sync „{adGroupName}“: {added} neu, {updated} SID aktualisiert, {accounts.Count} in AD.";
+        statusMessage = L["AdSyncResult", adGroupName, added, updated, accounts.Count];
         await LoadAsync();
     }
 
@@ -266,8 +266,8 @@
 
         await dbContext.SaveChangesAsync();
         statusMessage = resolved == 0
-            ? "Keine neuen SIDs aufgelöst."
-            : $"{resolved} SID(s) aufgelöst.";
+            ? L["NoSidsResolved"]
+            : L["SidsResolved", resolved];
         await LoadAsync();
     }
 

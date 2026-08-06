@@ -3,32 +3,32 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 
-<PageTitle>Programme</PageTitle>
+<PageTitle>@L["Nav_Programs"]</PageTitle>
 
-<p class="page-lead">Programme anlegen, die Gruppen zugewiesen und vom Agent ausgeliefert werden.</p>
+<p class="page-lead">@L["Lead_Programs"]</p>
 
 <div class="panel">
-    <div class="panel-title">Programm anlegen</div>
+    <div class="panel-title">@L["CreateProgram"]</div>
     <EditForm Model="model" OnValidSubmit="CreateProgramAsync">
         <div class="form-grid">
             <div>
-                <label class="form-label">Name</label>
+                <label class="form-label">@L["Name"]</label>
                 <InputText class="form-control" @bind-Value="model.Name" />
             </div>
             <div>
-                <label class="form-label">Slug</label>
+                <label class="form-label">@L["Slug"]</label>
                 <InputText class="form-control" @bind-Value="model.Slug" />
             </div>
             <div>
-                <label class="form-label">Kurzname</label>
+                <label class="form-label">@L["ShortName"]</label>
                 <InputText class="form-control" @bind-Value="model.ShortName" />
             </div>
             <div>
-                <label class="form-label">Beschreibung</label>
+                <label class="form-label">@L["Description"]</label>
                 <InputText class="form-control" @bind-Value="model.Description" />
             </div>
             <div class="form-grid-action">
-                <button class="btn btn-primary w-100" type="submit">Hinzufügen</button>
+                <button class="btn btn-primary w-100" type="submit">@L["Add"]</button>
             </div>
         </div>
     </EditForm>
@@ -38,17 +38,17 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Slug</th>
-                <th>Kurzname</th>
-                <th>Beschreibung</th>
+                <th>@L["Name"]</th>
+                <th>@L["Slug"]</th>
+                <th>@L["ShortName"]</th>
+                <th>@L["Description"]</th>
             </tr>
         </thead>
         <tbody>
             @if (programs.Count == 0)
             {
                 <tr>
-                    <td colspan="4" class="text-muted">Noch keine Programme.</td>
+                    <td colspan="4" class="text-muted">@L["NoPrograms"]</td>
                 </tr>
             }
             else

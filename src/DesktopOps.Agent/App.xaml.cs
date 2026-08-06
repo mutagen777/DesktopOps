@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Globalization;
+using System.Windows;
 using DesktopOps.Agent.Services;
 
 namespace DesktopOps.Agent;
@@ -9,6 +10,9 @@ public partial class App : System.Windows.Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentUICulture;
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentUICulture;
+
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 

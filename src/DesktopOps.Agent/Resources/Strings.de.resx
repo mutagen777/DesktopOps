@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="TrayTooltip" xml:space="preserve"><value>DesktopOps Agent</value></data>
+  <data name="BalloonRunning" xml:space="preserve"><value>Läuft im Infobereich. Rechtsklick auf das blaue D-Symbol für Optionen.</value></data>
+  <data name="ServerUnreachableRetry" xml:space="preserve"><value>Server nicht erreichbar. Erneuter Versuch über die Suche.</value></data>
+  <data name="ServerUnreachable" xml:space="preserve"><value>Server nicht erreichbar.</value></data>
+  <data name="UpdateAvailableOne" xml:space="preserve"><value>1 Aktualisierung verfügbar. Doppelklick oder „Updates suchen…“.</value></data>
+  <data name="UpdateAvailableMany" xml:space="preserve"><value>{0} Aktualisierungen verfügbar. Doppelklick oder „Updates suchen…“.</value></data>
+  <data name="LastSearchNone" xml:space="preserve"><value>Letzte Suche: –</value></data>
+  <data name="LastSearch" xml:space="preserve"><value>Letzte Suche: {0}</value></data>
+  <data name="Version" xml:space="preserve"><value>Version: {0}</value></data>
+  <data name="MenuConfiguration" xml:space="preserve"><value>Konfiguration</value></data>
+  <data name="MenuSearchUpdates" xml:space="preserve"><value>Updates suchen…</value></data>
+  <data name="MenuReinstall" xml:space="preserve"><value>Programme neuinstallieren</value></data>
+  <data name="MenuDiagnostics" xml:space="preserve"><value>Diagnose exportieren</value></data>
+  <data name="MenuExit" xml:space="preserve"><value>Beenden</value></data>
+  <data name="AgentStillStarting" xml:space="preserve"><value>Agent startet noch. Bitte kurz warten.</value></data>
+  <data name="NoUpdatesAvailable" xml:space="preserve"><value>Keine Updates verfügbar.</value></data>
+  <data name="ReinstallConfirm" xml:space="preserve"><value>Lokale Programm-Installationen entfernen und neu suchen?
+(Der Agent selbst bleibt erhalten.)</value></data>
+  <data name="ReinstallTitle" xml:space="preserve"><value>Programme neuinstallieren</value></data>
+  <data name="NothingToReinstall" xml:space="preserve"><value>Keine Programme zum Neuinstallieren gefunden.</value></data>
+  <data name="DiagnosticsExported" xml:space="preserve"><value>Diagnose exportiert nach {0}</value></data>
+  <data name="AgentUpdateRestart" xml:space="preserve"><value>Agent-Update vorbereitet. Neustart…</value></data>
+  <data name="SearchTitle" xml:space="preserve"><value>DesktopOps – Updates suchen</value></data>
+  <data name="Searching" xml:space="preserve"><value>Updates werden gesucht…</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="NoUpdatesFound" xml:space="preserve"><value>Keine Updates gefunden.</value></data>
+  <data name="UpdateTitle" xml:space="preserve"><value>DesktopOps – Updates</value></data>
+  <data name="PendingActions" xml:space="preserve"><value>Folgende Aktionen stehen aus:</value></data>
+  <data name="Execute" xml:space="preserve"><value>Ausführen</value></data>
+  <data name="Close" xml:space="preserve"><value>Schließen</value></data>
+  <data name="NoPendingActions" xml:space="preserve"><value>Keine ausstehenden Aktionen.</value></data>
+  <data name="ActionsReady" xml:space="preserve"><value>{0} Aktion(en) bereit.</value></data>
+  <data name="ProgressStep" xml:space="preserve"><value>{0} / {1} – {2}: {3}</value></data>
+  <data name="NothingInstalled" xml:space="preserve"><value>Nichts installiert.</value></data>
+  <data name="ActionsDone" xml:space="preserve"><value>{0} Aktion(en) ausgeführt.</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>Abgebrochen.</value></data>
+  <data name="ConfigTitle" xml:space="preserve"><value>DesktopOps – Konfiguration</value></data>
+  <data name="Save" xml:space="preserve"><value>Speichern</value></data>
+  <data name="TabGeneral" xml:space="preserve"><value>Allgemein</value></data>
+  <data name="TabPrograms" xml:space="preserve"><value>Programme</value></data>
+  <data name="InstallFolder" xml:space="preserve"><value>Installationsordner</value></data>
+  <data name="LastSearchLabel" xml:space="preserve"><value>Letzte Suche</value></data>
+  <data name="SearchEllipsis" xml:space="preserve"><value>Suchen…</value></data>
+  <data name="AgentVersion" xml:space="preserve"><value>Agent-Version</value></data>
+  <data name="AutoInstall" xml:space="preserve"><value>Updates beim Start automatisch installieren</value></data>
+  <data name="NotifyUpdates" xml:space="preserve"><value>Benachrichtigen, wenn Updates gefunden wurden</value></data>
+  <data name="NoSearchYet" xml:space="preserve"><value>Noch keine Suche</value></data>
+  <data name="ColName" xml:space="preserve"><value>Name</value></data>
+  <data name="ColLatest" xml:space="preserve"><value>Neueste Version</value></data>
+  <data name="ColInstalled" xml:space="preserve"><value>Installierte Version</value></data>
+  <data name="ActionInstall" xml:space="preserve"><value>{0} - Installieren</value></data>
+  <data name="ActionInstallVer" xml:space="preserve"><value>{0} - {1} - Installieren</value></data>
+  <data name="ActionUpdate" xml:space="preserve"><value>{0} - Aktualisieren</value></data>
+  <data name="ActionUpdateVer" xml:space="preserve"><value>{0} - {1} - Aktualisieren</value></data>
+  <data name="ActionUninstall" xml:space="preserve"><value>{0} - Deinstallieren</value></data>
+  <data name="ProgressPreparing" xml:space="preserve"><value>Vorbereitung…</value></data>
+  <data name="ProgressAgentPreparing" xml:space="preserve"><value>Agent-Update wird vorbereitet…</value></data>
+  <data name="ProgressRestart" xml:space="preserve"><value>Neustart wird geplant…</value></data>
+  <data name="ProgressRemoving" xml:space="preserve"><value>Wird entfernt…</value></data>
+  <data name="ProgressBackup" xml:space="preserve"><value>Backup wird erstellt…</value></data>
+  <data name="ProgressDownload" xml:space="preserve"><value>Download…</value></data>
+  <data name="ProgressInstall" xml:space="preserve"><value>Installation…</value></data>
+  <data name="ProgressFailed" xml:space="preserve"><value>Fehlgeschlagen</value></data>
+  <data name="ProgressDone" xml:space="preserve"><value>Fertig</value></data>
+</root>

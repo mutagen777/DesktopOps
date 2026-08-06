@@ -1,4 +1,5 @@
 using System.Windows;
+using DesktopOps.Agent.Resources;
 using DesktopOps.Agent.Services;
 
 namespace DesktopOps.Agent;
@@ -15,6 +16,10 @@ public partial class UpdateWindow : Window
         _orchestrator = orchestrator;
         _autoExecute = autoExecute;
         InitializeComponent();
+        Title = Loc.Get("UpdateTitle");
+        PendingHeader.Text = Loc.Get("PendingActions");
+        ExecuteButton.Content = Loc.Get("Execute");
+        CloseButton.Content = Loc.Get("Cancel");
         Loaded += OnLoaded;
     }
 
@@ -37,8 +42,8 @@ public partial class UpdateWindow : Window
 
         ExecuteButton.IsEnabled = ActionList.Items.Count > 0 && !_running;
         StepText.Text = ActionList.Items.Count == 0
-            ? "Keine ausstehenden Aktionen."
-            : $"{ActionList.Items.Count} Aktion(en) bereit.";
+            ? Loc.Get("NoPendingActions")
+            : Loc.Format("ActionsReady", ActionList.Items.Count);
     }
 
     private async void OnExecuteClick(object sender, RoutedEventArgs e) => await RunAsync();
@@ -52,12 +57,12 @@ public partial class UpdateWindow : Window
 
         _running = true;
         ExecuteButton.IsEnabled = false;
-        CloseButton.Content = "Abbrechen";
+        CloseButton.Content = Loc.Get("Cancel");
         _cts = new CancellationTokenSource();
 
         var progress = new Progress<UpdateProgress>(report =>
         {
-            StepText.Text = $"{report.Current} / {report.Total} – {report.Title}: {report.Detail}";
+            StepText.Text = Loc.Format("ProgressStep", report.Current, report.Total, report.Title, report.Detail);
             Progress.Value = Math.Clamp(report.Fraction, 0, 1);
         });
 
@@ -66,27 +71,29 @@ public partial class UpdateWindow : Window
             var count = await _orchestrator.InstallPendingAsync(progress, _cts.Token);
             if (_orchestrator.RestartScheduled)
             {
-                StepText.Text = "Agent-Update vorbereitet. Neustart…";
+                StepText.Text = Loc.Get("AgentUpdateRestart");
                 DialogResult = true;
                 Close();
                 System.Windows.Application.Current.Shutdown();
                 return;
             }
 
-            StepText.Text = count == 0 ? "Nichts installiert." : $"{count} Aktion(en) ausgeführt.";
+            StepText.Text = count == 0
+                ? Loc.Get("NothingInstalled")
+                : Loc.Format("ActionsDone", count);
             Progress.Value = 1;
             RefreshList();
-            CloseButton.Content = "Schließen";
+            CloseButton.Content = Loc.Get("Close");
         }
         catch (OperationCanceledException)
         {
-            StepText.Text = "Abgebrochen.";
-            CloseButton.Content = "Schließen";
+            StepText.Text = Loc.Get("Cancelled");
+            CloseButton.Content = Loc.Get("Close");
         }
         catch (Exception ex)
         {
             StepText.Text = ex.Message;
-            CloseButton.Content = "Schließen";
+            CloseButton.Content = Loc.Get("Close");
         }
         finally
         {

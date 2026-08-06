@@ -3,28 +3,28 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 
-<PageTitle>Rollouts</PageTitle>
+<PageTitle>@L["Nav_Rollouts"]</PageTitle>
 
-<p class="page-lead">Statusmeldungen der Agents nach Download und Installation.</p>
+<p class="page-lead">@L["Lead_Rollouts"]</p>
 
 <div class="table-panel">
     <table class="table">
         <thead>
             <tr>
-                <th>Zeit (UTC)</th>
-                <th>Benutzer</th>
-                <th>Rechner</th>
-                <th>Programm</th>
-                <th>Version</th>
-                <th>Status</th>
-                <th>Meldung</th>
+                <th>@L["TimeUtc"]</th>
+                <th>@L["User"]</th>
+                <th>@L["Machine"]</th>
+                <th>@L["Program"]</th>
+                <th>@L["Version"]</th>
+                <th>@L["Status"]</th>
+                <th>@L["Message"]</th>
             </tr>
         </thead>
         <tbody>
             @if (events.Count == 0)
             {
                 <tr>
-                    <td colspan="7" class="text-muted">Noch keine Rollout-Ereignisse.</td>
+                    <td colspan="7" class="text-muted">@L["NoRolloutEvents"]</td>
                 </tr>
             }
             else

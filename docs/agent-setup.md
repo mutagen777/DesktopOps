@@ -52,15 +52,17 @@ UI settings are stored in `%LocalAppData%\DesktopOps\agent-ui.json`:
 
 Self-update details: [Agent self-update](agent-self-update.md).
 
+UI language follows the Windows display language (English / German). See [Localization](localization.md).
+
 ## Tray menu
 
-- **Konfiguration**
-- **Updates suchen...**
-- **Letzte Suche** (info)
-- **Programme neuinstallieren**
-- **Diagnose exportieren**
+- **Configuration** / **Konfiguration**
+- **Search for updates…** / **Updates suchen…**
+- **Last search** (info)
+- **Reinstall programs** / **Programme neuinstallieren**
+- **Export diagnostics** / **Diagnose exportieren**
 - **Version** (info)
-- **Beenden**
+- **Exit** / **Beenden**
 
 ## Prerequisites
 

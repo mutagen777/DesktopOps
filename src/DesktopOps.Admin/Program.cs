@@ -45,6 +45,17 @@ else
     builder.Services.AddSingleton<IDirectoryAccountLookup, NullDirectoryAccountLookup>();
 }
 
+builder.Services.AddLocalization();
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supported = new[] { "en", "de", "fr", "es", "it", "ru" };
+    options.SetDefaultCulture("en")
+        .AddSupportedCultures(supported)
+        .AddSupportedUICultures(supported);
+    options.ApplyCurrentCultureToResponseHeaders = true;
+});
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
@@ -109,6 +120,7 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found");
 app.UseHttpsRedirection();
+app.UseRequestLocalization();
 
 if (security.Enabled)
 {

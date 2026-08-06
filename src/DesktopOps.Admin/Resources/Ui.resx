@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav_Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Nav_Programs" xml:space="preserve"><value>Programs</value></data>
+  <data name="Nav_Groups" xml:space="preserve"><value>Groups</value></data>
+  <data name="Nav_Assignments" xml:space="preserve"><value>Assignments</value></data>
+  <data name="Nav_Releases" xml:space="preserve"><value>Releases</value></data>
+  <data name="Nav_Rollouts" xml:space="preserve"><value>Rollouts</value></data>
+  <data name="Lead_Overview" xml:space="preserve"><value>Quick overview of programs, groups, releases, and assignments.</value></data>
+  <data name="Lead_Programs" xml:space="preserve"><value>Create programs that can be assigned to groups and delivered by the agent.</value></data>
+  <data name="Lead_Groups" xml:space="preserve"><value>Users in a group receive all programs assigned to that group. Optionally resolve SIDs and sync members from an AD/Windows group.</value></data>
+  <data name="Lead_Assignments" xml:space="preserve"><value>Assign a program to a group — all members receive published releases.</value></data>
+  <data name="Lead_Releases" xml:space="preserve"><value>Upload a ZIP and publish. Use rollout % to unlock only part of the assigned users.</value></data>
+  <data name="Lead_Rollouts" xml:space="preserve"><value>Agent status messages after download and installation.</value></data>
+  <data name="Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Recent" xml:space="preserve"><value>Recent</value></data>
+  <data name="Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="NoneYet" xml:space="preserve"><value>None yet</value></data>
+  <data name="PublishedReleases" xml:space="preserve"><value>Published releases</value></data>
+  <data name="Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Published" xml:space="preserve"><value>Published</value></data>
+  <data name="UploadPublishRelease" xml:space="preserve"><value>Upload / publish release</value></data>
+  <data name="OpenRollouts" xml:space="preserve"><value>Open rollouts</value></data>
+  <data name="DraftReleasesWaiting" xml:space="preserve"><value>{0} draft release(s) waiting to publish</value></data>
+  <data name="StagedRolloutsBelow" xml:space="preserve"><value>{0} staged rollout(s) below 100%</value></data>
+  <data name="CreateProgram" xml:space="preserve"><value>Create program</value></data>
+  <data name="Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Slug" xml:space="preserve"><value>Slug</value></data>
+  <data name="ShortName" xml:space="preserve"><value>Short name</value></data>
+  <data name="Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Add" xml:space="preserve"><value>Add</value></data>
+  <data name="NoPrograms" xml:space="preserve"><value>No programs yet.</value></data>
+  <data name="CreateGroup" xml:space="preserve"><value>Create group</value></data>
+  <data name="AdGroupOptional" xml:space="preserve"><value>AD group (optional)</value></data>
+  <data name="UsersCommaSeparated" xml:space="preserve"><value>Users (comma-separated)</value></data>
+  <data name="NoGroups" xml:space="preserve"><value>No groups yet.</value></data>
+  <data name="NoDescription" xml:space="preserve"><value>No description</value></data>
+  <data name="Members" xml:space="preserve"><value>Members ({0}):</value></data>
+  <data name="AddUser" xml:space="preserve"><value>Add user</value></data>
+  <data name="AdWindowsGroup" xml:space="preserve"><value>AD/Windows group</value></data>
+  <data name="SyncFromAd" xml:space="preserve"><value>Sync from AD</value></data>
+  <data name="ResolveSids" xml:space="preserve"><value>Resolve SIDs</value></data>
+  <data name="DirectoryWindowsOnly" xml:space="preserve"><value>Directory services are only available on Windows.</value></data>
+  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Group</value></data>
+  <data name="PlaceholderUsers" xml:space="preserve"><value>e.g. peke, alice</value></data>
+  <data name="PlaceholderUser" xml:space="preserve"><value>DOMAIN\user or samAccountName</value></data>
+  <data name="PlaceholderAdUsers" xml:space="preserve"><value>DOMAIN\DesktopOps-Users</value></data>
+  <data name="GroupCreated" xml:space="preserve"><value>Group created ({0} member(s)).</value></data>
+  <data name="UserAdded" xml:space="preserve"><value>User {0} added.</value></data>
+  <data name="UserAddedNoSid" xml:space="preserve"><value>User {0} added (no SID).</value></data>
+  <data name="AdGroupMissing" xml:space="preserve"><value>AD group name is missing.</value></data>
+  <data name="NoMembersInAd" xml:space="preserve"><value>No members found in "{0}" (or group unreachable).</value></data>
+  <data name="AdSyncResult" xml:space="preserve"><value>AD sync "{0}": {1} new, {2} SID updated, {3} in AD.</value></data>
+  <data name="NoSidsResolved" xml:space="preserve"><value>No new SIDs resolved.</value></data>
+  <data name="SidsResolved" xml:space="preserve"><value>{0} SID(s) resolved.</value></data>
+  <data name="CreateAssignment" xml:space="preserve"><value>Create assignment</value></data>
+  <data name="SelectProgram" xml:space="preserve"><value>Select program</value></data>
+  <data name="SelectGroup" xml:space="preserve"><value>Select group</value></data>
+  <data name="Assign" xml:space="preserve"><value>Assign</value></data>
+  <data name="NoAssignments" xml:space="preserve"><value>No assignments yet.</value></data>
+  <data name="Program" xml:space="preserve"><value>Program</value></data>
+  <data name="Group" xml:space="preserve"><value>Group</value></data>
+  <data name="UploadRelease" xml:space="preserve"><value>Upload release</value></data>
+  <data name="Version" xml:space="preserve"><value>Version</value></data>
+  <data name="PackageZip" xml:space="preserve"><value>Package (ZIP)</value></data>
+  <data name="ReleaseNotes" xml:space="preserve"><value>Release notes</value></data>
+  <data name="RolloutPercent" xml:space="preserve"><value>Rollout %</value></data>
+  <data name="MandatoryUpdate" xml:space="preserve"><value>Mandatory update</value></data>
+  <data name="Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="NoReleases" xml:space="preserve"><value>No releases yet.</value></data>
+  <data name="Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Rollout" xml:space="preserve"><value>Rollout</value></data>
+  <data name="Publish" xml:space="preserve"><value>Publish</value></data>
+  <data name="Sha256" xml:space="preserve"><value>SHA-256</value></data>
+  <data name="TimeUtc" xml:space="preserve"><value>Time (UTC)</value></data>
+  <data name="User" xml:space="preserve"><value>User</value></data>
+  <data name="Machine" xml:space="preserve"><value>Machine</value></data>
+  <data name="Message" xml:space="preserve"><value>Message</value></data>
+  <data name="NoRolloutEvents" xml:space="preserve"><value>No rollout events yet.</value></data>
+  <data name="AuthOff" xml:space="preserve"><value>Auth off</value></data>
+  <data name="Config" xml:space="preserve"><value>Config</value></data>
+  <data name="Roles" xml:space="preserve"><value>Roles</value></data>
+  <data name="NoRoleClaims" xml:space="preserve"><value>no role claims</value></data>
+  <data name="Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="UnexpectedError" xml:space="preserve"><value>An unexpected error occurred.</value></data>
+  <data name="ErrorTitle" xml:space="preserve"><value>Error</value></data>
+  <data name="ErrorBody" xml:space="preserve"><value>An error occurred while processing your request.</value></data>
+  <data name="NotFound" xml:space="preserve"><value>The page was not found.</value></data>
+  <data name="BackToOverview" xml:space="preserve"><value>Back to overview</value></data>
+  <data name="LoginRequired" xml:space="preserve"><value>Sign-in required (Windows authentication).</value></data>
+  <data name="Forbidden" xml:space="preserve"><value>You do not have permission for this page.</value></data>
+  <data name="ForbiddenHint" xml:space="preserve"><value>Programs and releases require the Developer AD group. Groups and assignments require the Manager or Developer group.</value></data>
+</root>

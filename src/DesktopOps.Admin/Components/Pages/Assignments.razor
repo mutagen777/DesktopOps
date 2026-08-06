@@ -3,17 +3,17 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 
-<PageTitle>Zuweisungen</PageTitle>
+<PageTitle>@L["Nav_Assignments"]</PageTitle>
 
-<p class="page-lead">Programm einer Gruppe zuweisen – alle Mitglieder erhalten die veröffentlichten Releases.</p>
+<p class="page-lead">@L["Lead_Assignments"]</p>
 
 <div class="panel">
-    <div class="panel-title">Zuweisung anlegen</div>
+    <div class="panel-title">@L["CreateAssignment"]</div>
     <div class="row g-3 align-items-end">
         <div class="col-md-5">
-            <label class="form-label">Programm</label>
+            <label class="form-label">@L["Program"]</label>
             <InputSelect class="form-select" @bind-Value="selectedProgramId">
-                <option value="">Programm wählen</option>
+                <option value="">@L["SelectProgram"]</option>
                 @foreach (var program in programs)
                 {
                     <option value="@program.Id">@program.Name</option>
@@ -21,9 +21,9 @@
             </InputSelect>
         </div>
         <div class="col-md-5">
-            <label class="form-label">Gruppe</label>
+            <label class="form-label">@L["Group"]</label>
             <InputSelect class="form-select" @bind-Value="selectedGroupId">
-                <option value="">Gruppe wählen</option>
+                <option value="">@L["SelectGroup"]</option>
                 @foreach (var group in groups)
                 {
                     <option value="@group.Id">@group.Name</option>
@@ -31,7 +31,7 @@
             </InputSelect>
         </div>
         <div class="col-md-2">
-            <button class="btn btn-primary w-100" @onclick="CreateAssignmentAsync">Zuweisen</button>
+            <button class="btn btn-primary w-100" @onclick="CreateAssignmentAsync">@L["Assign"]</button>
         </div>
     </div>
 </div>
@@ -40,15 +40,15 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Programm</th>
-                <th>Gruppe</th>
+                <th>@L["Program"]</th>
+                <th>@L["Group"]</th>
             </tr>
         </thead>
         <tbody>
             @if (assignments.Count == 0)
             {
                 <tr>
-                    <td colspan="2" class="text-muted">Noch keine Zuweisungen.</td>
+                    <td colspan="2" class="text-muted">@L["NoAssignments"]</td>
                 </tr>
             }
             else

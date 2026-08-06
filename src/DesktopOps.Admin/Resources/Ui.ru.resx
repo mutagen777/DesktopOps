@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav_Overview" xml:space="preserve"><value>Обзор</value></data>
+  <data name="Nav_Programs" xml:space="preserve"><value>Программы</value></data>
+  <data name="Nav_Groups" xml:space="preserve"><value>Группы</value></data>
+  <data name="Nav_Assignments" xml:space="preserve"><value>Назначения</value></data>
+  <data name="Nav_Releases" xml:space="preserve"><value>Релизы</value></data>
+  <data name="Nav_Rollouts" xml:space="preserve"><value>Развёртывания</value></data>
+  <data name="Lead_Overview" xml:space="preserve"><value>Краткий обзор программ, групп, релизов и назначений.</value></data>
+  <data name="Lead_Programs" xml:space="preserve"><value>Создавайте программы для назначения группам и доставки агентом.</value></data>
+  <data name="Lead_Groups" xml:space="preserve"><value>Пользователи группы получают все назначенные программы. При необходимости: SID и синхронизация из AD/Windows.</value></data>
+  <data name="Lead_Assignments" xml:space="preserve"><value>Назначьте программу группе — все участники получат опубликованные релизы.</value></data>
+  <data name="Lead_Releases" xml:space="preserve"><value>Загрузите ZIP и опубликуйте. Процент развёртывания открывает доступ лишь части пользователей.</value></data>
+  <data name="Lead_Rollouts" xml:space="preserve"><value>Сообщения агентов после загрузки и установки.</value></data>
+  <data name="Status" xml:space="preserve"><value>Статус</value></data>
+  <data name="Recent" xml:space="preserve"><value>Недавние</value></data>
+  <data name="Actions" xml:space="preserve"><value>Действия</value></data>
+  <data name="NoneYet" xml:space="preserve"><value>Пока нет</value></data>
+  <data name="PublishedReleases" xml:space="preserve"><value>Опубликованные релизы</value></data>
+  <data name="Draft" xml:space="preserve"><value>Черновик</value></data>
+  <data name="Published" xml:space="preserve"><value>Опубликован</value></data>
+  <data name="UploadPublishRelease" xml:space="preserve"><value>Загрузить / опубликовать релиз</value></data>
+  <data name="OpenRollouts" xml:space="preserve"><value>Открыть развёртывания</value></data>
+  <data name="DraftReleasesWaiting" xml:space="preserve"><value>{0} черновик(ов) релизов ожидают публикации</value></data>
+  <data name="StagedRolloutsBelow" xml:space="preserve"><value>{0} поэтапных развёртываний ниже 100%</value></data>
+  <data name="CreateProgram" xml:space="preserve"><value>Создать программу</value></data>
+  <data name="Name" xml:space="preserve"><value>Имя</value></data>
+  <data name="Slug" xml:space="preserve"><value>Slug</value></data>
+  <data name="ShortName" xml:space="preserve"><value>Краткое имя</value></data>
+  <data name="Description" xml:space="preserve"><value>Описание</value></data>
+  <data name="Add" xml:space="preserve"><value>Добавить</value></data>
+  <data name="NoPrograms" xml:space="preserve"><value>Программ пока нет.</value></data>
+  <data name="CreateGroup" xml:space="preserve"><value>Создать группу</value></data>
+  <data name="AdGroupOptional" xml:space="preserve"><value>Группа AD (необязательно)</value></data>
+  <data name="UsersCommaSeparated" xml:space="preserve"><value>Пользователи (через запятую)</value></data>
+  <data name="NoGroups" xml:space="preserve"><value>Групп пока нет.</value></data>
+  <data name="NoDescription" xml:space="preserve"><value>Нет описания</value></data>
+  <data name="Members" xml:space="preserve"><value>Участники ({0}):</value></data>
+  <data name="AddUser" xml:space="preserve"><value>Добавить пользователя</value></data>
+  <data name="AdWindowsGroup" xml:space="preserve"><value>Группа AD/Windows</value></data>
+  <data name="SyncFromAd" xml:space="preserve"><value>Синхронизировать из AD</value></data>
+  <data name="ResolveSids" xml:space="preserve"><value>Разрешить SID</value></data>
+  <data name="DirectoryWindowsOnly" xml:space="preserve"><value>Службы каталогов доступны только в Windows.</value></data>
+  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Group</value></data>
+  <data name="PlaceholderUsers" xml:space="preserve"><value>напр. peke, alice</value></data>
+  <data name="PlaceholderUser" xml:space="preserve"><value>DOMAIN\user или samAccountName</value></data>
+  <data name="PlaceholderAdUsers" xml:space="preserve"><value>DOMAIN\DesktopOps-Users</value></data>
+  <data name="GroupCreated" xml:space="preserve"><value>Группа создана ({0} участник(ов)).</value></data>
+  <data name="UserAdded" xml:space="preserve"><value>Пользователь {0} добавлен.</value></data>
+  <data name="UserAddedNoSid" xml:space="preserve"><value>Пользователь {0} добавлен (без SID).</value></data>
+  <data name="AdGroupMissing" xml:space="preserve"><value>Не указано имя группы AD.</value></data>
+  <data name="NoMembersInAd" xml:space="preserve"><value>В «{0}» участники не найдены (или группа недоступна).</value></data>
+  <data name="AdSyncResult" xml:space="preserve"><value>Синхронизация AD «{0}»: {1} новых, {2} SID обновлено, {3} в AD.</value></data>
+  <data name="NoSidsResolved" xml:space="preserve"><value>Новые SID не разрешены.</value></data>
+  <data name="SidsResolved" xml:space="preserve"><value>Разрешено SID: {0}.</value></data>
+  <data name="CreateAssignment" xml:space="preserve"><value>Создать назначение</value></data>
+  <data name="SelectProgram" xml:space="preserve"><value>Выберите программу</value></data>
+  <data name="SelectGroup" xml:space="preserve"><value>Выберите группу</value></data>
+  <data name="Assign" xml:space="preserve"><value>Назначить</value></data>
+  <data name="NoAssignments" xml:space="preserve"><value>Назначений пока нет.</value></data>
+  <data name="Program" xml:space="preserve"><value>Программа</value></data>
+  <data name="Group" xml:space="preserve"><value>Группа</value></data>
+  <data name="UploadRelease" xml:space="preserve"><value>Загрузить релиз</value></data>
+  <data name="Version" xml:space="preserve"><value>Версия</value></data>
+  <data name="PackageZip" xml:space="preserve"><value>Пакет (ZIP)</value></data>
+  <data name="ReleaseNotes" xml:space="preserve"><value>Заметки к релизу</value></data>
+  <data name="RolloutPercent" xml:space="preserve"><value>Развёртывание %</value></data>
+  <data name="MandatoryUpdate" xml:space="preserve"><value>Обязательное обновление</value></data>
+  <data name="Upload" xml:space="preserve"><value>Загрузить</value></data>
+  <data name="NoReleases" xml:space="preserve"><value>Релизов пока нет.</value></data>
+  <data name="Size" xml:space="preserve"><value>Размер</value></data>
+  <data name="Rollout" xml:space="preserve"><value>Развёртывание</value></data>
+  <data name="Publish" xml:space="preserve"><value>Опубликовать</value></data>
+  <data name="Sha256" xml:space="preserve"><value>SHA-256</value></data>
+  <data name="TimeUtc" xml:space="preserve"><value>Время (UTC)</value></data>
+  <data name="User" xml:space="preserve"><value>Пользователь</value></data>
+  <data name="Machine" xml:space="preserve"><value>Компьютер</value></data>
+  <data name="Message" xml:space="preserve"><value>Сообщение</value></data>
+  <data name="NoRolloutEvents" xml:space="preserve"><value>Событий развёртывания пока нет.</value></data>
+  <data name="AuthOff" xml:space="preserve"><value>Auth выкл.</value></data>
+  <data name="Config" xml:space="preserve"><value>Конфиг</value></data>
+  <data name="Roles" xml:space="preserve"><value>Роли</value></data>
+  <data name="NoRoleClaims" xml:space="preserve"><value>нет ролевых claims</value></data>
+  <data name="Reload" xml:space="preserve"><value>Обновить</value></data>
+  <data name="UnexpectedError" xml:space="preserve"><value>Произошла непредвиденная ошибка.</value></data>
+  <data name="ErrorTitle" xml:space="preserve"><value>Ошибка</value></data>
+  <data name="ErrorBody" xml:space="preserve"><value>При обработке запроса произошла ошибка.</value></data>
+  <data name="NotFound" xml:space="preserve"><value>Страница не найдена.</value></data>
+  <data name="BackToOverview" xml:space="preserve"><value>К обзору</value></data>
+  <data name="LoginRequired" xml:space="preserve"><value>Требуется вход (проверка подлинности Windows).</value></data>
+  <data name="Forbidden" xml:space="preserve"><value>Нет доступа к этой странице.</value></data>
+  <data name="ForbiddenHint" xml:space="preserve"><value>Программы и релизы — группа AD Developer. Группы и назначения — Manager или Developer.</value></data>
+</root>
