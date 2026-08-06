@@ -10,24 +10,24 @@
 <div class="panel">
     <div class="panel-title">Programm anlegen</div>
     <EditForm Model="model" OnValidSubmit="CreateProgramAsync">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-3">
+        <div class="form-grid">
+            <div>
                 <label class="form-label">Name</label>
                 <InputText class="form-control" @bind-Value="model.Name" />
             </div>
-            <div class="col-md-2">
+            <div>
                 <label class="form-label">Slug</label>
                 <InputText class="form-control" @bind-Value="model.Slug" />
             </div>
-            <div class="col-md-2">
+            <div>
                 <label class="form-label">Kurzname</label>
                 <InputText class="form-control" @bind-Value="model.ShortName" />
             </div>
-            <div class="col-md-3">
+            <div>
                 <label class="form-label">Beschreibung</label>
                 <InputText class="form-control" @bind-Value="model.Description" />
             </div>
-            <div class="col-md-2">
+            <div class="form-grid-action">
                 <button class="btn btn-primary w-100" type="submit">Hinzufügen</button>
             </div>
         </div>

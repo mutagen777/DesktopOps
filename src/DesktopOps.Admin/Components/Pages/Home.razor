@@ -6,6 +6,23 @@
 
 <p class="page-lead">Kurzüberblick über Programme, Gruppen, Releases und Zuweisungen.</p>
 
+@if (draftReleaseCount > 0 || stagedRolloutCount > 0)
+{
+    <div class="panel dashboard-status">
+        <div class="panel-title">Status</div>
+        <ul class="mb-0">
+            @if (draftReleaseCount > 0)
+            {
+                <li><a href="releases">@draftReleaseCount Entwurf-Release(s)</a> warten auf Veröffentlichung</li>
+            }
+            @if (stagedRolloutCount > 0)
+            {
+                <li><a href="rollouts">@stagedRolloutCount gestaffelte(r) Rollout(s)</a> unter 100&nbsp;%</li>
+            }
+        </ul>
+    </div>
+}
+
 <div class="dashboard-wrap">
     <div class="dashboard-card">
         <h2 class="dashboard-card-title"><a href="programs">Programme</a></h2>
@@ -83,9 +100,11 @@
 
 @code {
     private int assignmentCount;
+    private int draftReleaseCount;
     private int groupCount;
     private int programCount;
     private int publishedReleaseCount;
+    private int stagedRolloutCount;
     private List<ManagedProgram> latestPrograms = [];
     private List<UserGroup> latestGroups = [];
     private List<ReleasePackage> latestReleases = [];
@@ -97,6 +116,9 @@
         groupCount = await dbContext.UserGroups.CountAsync();
         assignmentCount = await dbContext.ProgramAssignments.CountAsync();
         publishedReleaseCount = await dbContext.ReleasePackages.CountAsync(item => item.PublishedAtUtc != null);
+        draftReleaseCount = await dbContext.ReleasePackages.CountAsync(item => item.PublishedAtUtc == null);
+        stagedRolloutCount = await dbContext.ReleasePackages.CountAsync(item =>
+            item.PublishedAtUtc != null && item.RolloutPercent < 100);
 
         latestPrograms = await dbContext.Programs
             .OrderBy(static item => item.Name)

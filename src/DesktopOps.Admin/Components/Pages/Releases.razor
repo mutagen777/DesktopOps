@@ -39,7 +39,10 @@
         </div>
     </div>
     <div class="mb-3">
-        <InputCheckbox @bind-Value="isMandatory" /> Pflicht-Update
+        <label class="form-check-row">
+            <InputCheckbox class="form-check-input" @bind-Value="isMandatory" />
+            <span>Pflicht-Update</span>
+        </label>
     </div>
     <button class="btn btn-primary" @onclick="CreateReleaseAsync">Hochladen</button>
 </div>
