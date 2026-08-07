@@ -45,7 +45,8 @@
   <data name="SyncFromAd" xml:space="preserve"><value>Synchroniser depuis AD</value></data>
   <data name="ResolveSids" xml:space="preserve"><value>Résoudre les SID</value></data>
   <data name="DirectoryWindowsOnly" xml:space="preserve"><value>Les services d’annuaire ne sont disponibles que sous Windows.</value></data>
-  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Groupe</value></data>
+  <data name="DirectoryUnavailable" xml:space="preserve"><value>Aucun annuaire disponible. Configurez Windows/AD ou DirectorySync:Entra.</value></data>
+  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Groupe ou entra:NomGroupe</value></data>
   <data name="PlaceholderUsers" xml:space="preserve"><value>ex. peke, alice</value></data>
   <data name="PlaceholderUser" xml:space="preserve"><value>DOMAIN\user ou samAccountName</value></data>
   <data name="PlaceholderAdUsers" xml:space="preserve"><value>DOMAIN\DesktopOps-Users</value></data>

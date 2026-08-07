@@ -75,15 +75,19 @@ public sealed class DirectoryGroupSyncService
 
         if (!_directoryLookup.IsAvailable)
         {
-            return new DirectoryGroupSyncResult(groupId, adGroupName, 0, 0, 0, "Directory services are only available on Windows.");
+            return new DirectoryGroupSyncResult(
+                groupId,
+                adGroupName,
+                0,
+                0,
+                0,
+                "No directory backend is available. Configure Windows/AD or DirectorySync:Entra.");
         }
 
         IReadOnlyList<DirectoryAccount> accounts;
         try
         {
-            accounts = await Task.Run(
-                () => _directoryLookup.GetGroupMembers(adGroupName),
-                cancellationToken);
+            accounts = await _directoryLookup.GetGroupMembersAsync(adGroupName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

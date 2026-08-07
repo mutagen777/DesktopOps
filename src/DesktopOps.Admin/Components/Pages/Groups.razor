@@ -132,10 +132,13 @@
     private async Task CreateGroupAsync()
     {
         statusMessage = null;
-        var members = newGroup.UserNames
-            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-            .Select(CreateMemberFromName)
-            .ToList();
+        var memberNames = newGroup.UserNames
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var members = new List<UserGroupMember>(memberNames.Length);
+        foreach (var name in memberNames)
+        {
+            members.Add(await CreateMemberFromNameAsync(name));
+        }
 
         await using var dbContext = await DbFactory.CreateDbContextAsync();
         dbContext.UserGroups.Add(new UserGroup
@@ -165,7 +168,7 @@
         }
 
         statusMessage = null;
-        var member = CreateMemberFromName(userName);
+        var member = await CreateMemberFromNameAsync(userName);
         await using var dbContext = await DbFactory.CreateDbContextAsync();
         var exists = await dbContext.UserGroupMembers.AnyAsync(item =>
             item.UserGroupId == groupId &&
@@ -199,8 +202,9 @@
             var result = await DirectorySync.SyncGroupAsync(groupId, adGroupName);
             if (result.Error is not null)
             {
-                statusMessage = result.Error.Contains("Directory services", StringComparison.OrdinalIgnoreCase)
-                    ? L["DirectoryWindowsOnly"]
+                statusMessage = result.Error.Contains("No directory backend", StringComparison.OrdinalIgnoreCase)
+                    || result.Error.Contains("Directory services", StringComparison.OrdinalIgnoreCase)
+                    ? L["DirectoryUnavailable"]
                     : result.Error.Contains("not found", StringComparison.OrdinalIgnoreCase)
                         ? L["NoMembersInAd", adGroupName]
                         : result.Error;
@@ -228,7 +232,7 @@
         var resolved = 0;
         foreach (var member in members.Where(static item => string.IsNullOrWhiteSpace(item.WindowsSid)))
         {
-            var account = DirectoryLookup.ResolveUser(member.UserName);
+            var account = await DirectoryLookup.ResolveUserAsync(member.UserName);
             if (account?.WindowsSid is null)
             {
                 continue;
@@ -250,9 +254,9 @@
         await LoadAsync();
     }
 
-    private UserGroupMember CreateMemberFromName(string userName)
+    private async Task<UserGroupMember> CreateMemberFromNameAsync(string userName)
     {
-        var account = DirectoryLookup.ResolveUser(userName);
+        var account = await DirectoryLookup.ResolveUserAsync(userName);
         return new UserGroupMember
         {
             UserName = account?.UserName ?? userName.Trim(),

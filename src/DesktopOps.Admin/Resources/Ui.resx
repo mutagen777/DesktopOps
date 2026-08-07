@@ -45,7 +45,8 @@
   <data name="SyncFromAd" xml:space="preserve"><value>Sync from AD</value></data>
   <data name="ResolveSids" xml:space="preserve"><value>Resolve SIDs</value></data>
   <data name="DirectoryWindowsOnly" xml:space="preserve"><value>Directory services are only available on Windows.</value></data>
-  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Group</value></data>
+  <data name="DirectoryUnavailable" xml:space="preserve"><value>No directory backend is available. Configure Windows/AD or DirectorySync:Entra.</value></data>
+  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Group or entra:GroupName</value></data>
   <data name="PlaceholderUsers" xml:space="preserve"><value>e.g. peke, alice</value></data>
   <data name="PlaceholderUser" xml:space="preserve"><value>DOMAIN\user or samAccountName</value></data>
   <data name="PlaceholderAdUsers" xml:space="preserve"><value>DOMAIN\DesktopOps-Users</value></data>

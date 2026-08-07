@@ -40,14 +40,28 @@ builder.Services.Configure<DirectorySyncOptions>(
     builder.Configuration.GetSection(DirectorySyncOptions.SectionName));
 builder.Services.AddSingleton<DirectoryGroupSyncService>();
 builder.Services.AddHostedService<DesktopOps.Admin.Services.DirectorySyncHostedService>();
+builder.Services.AddSingleton<EntraGraphDirectoryLookup>();
 if (OperatingSystem.IsWindows())
 {
-    builder.Services.AddSingleton<IDirectoryAccountLookup, WindowsDirectoryAccountLookup>();
+    builder.Services.AddSingleton<WindowsDirectoryAccountLookup>();
 }
-else
+
+builder.Services.AddSingleton<IDirectoryAccountLookup>(static sp =>
 {
-    builder.Services.AddSingleton<IDirectoryAccountLookup, NullDirectoryAccountLookup>();
-}
+    WindowsDirectoryAccountLookup? windows = null;
+    if (OperatingSystem.IsWindows())
+    {
+        windows = sp.GetRequiredService<WindowsDirectoryAccountLookup>();
+    }
+
+    var entra = sp.GetRequiredService<EntraGraphDirectoryLookup>();
+    if (windows is null && !entra.IsAvailable)
+    {
+        return new NullDirectoryAccountLookup();
+    }
+
+    return new CompositeDirectoryAccountLookup(windows, entra);
+});
 
 builder.Services.AddLocalization();
 

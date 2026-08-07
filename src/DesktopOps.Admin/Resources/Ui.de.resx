@@ -45,7 +45,8 @@
   <data name="SyncFromAd" xml:space="preserve"><value>Aus AD synchronisieren</value></data>
   <data name="ResolveSids" xml:space="preserve"><value>SIDs auflösen</value></data>
   <data name="DirectoryWindowsOnly" xml:space="preserve"><value>Verzeichnisdienste nur unter Windows verfügbar.</value></data>
-  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Gruppe</value></data>
+  <data name="DirectoryUnavailable" xml:space="preserve"><value>Kein Verzeichnisbackend verfügbar. Windows/AD oder DirectorySync:Entra konfigurieren.</value></data>
+  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Gruppe oder entra:Gruppenname</value></data>
   <data name="PlaceholderUsers" xml:space="preserve"><value>z. B. peke, alice</value></data>
   <data name="PlaceholderUser" xml:space="preserve"><value>DOMAIN\user oder samAccountName</value></data>
   <data name="PlaceholderAdUsers" xml:space="preserve"><value>DOMAIN\DesktopOps-Users</value></data>

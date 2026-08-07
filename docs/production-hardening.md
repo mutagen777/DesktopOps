@@ -22,6 +22,7 @@ Prefer secrets via environment variables (do not commit real keys):
 | SQL connection | `ConnectionStrings__DesktopOps` |
 | Package storage | `Storage__RootPath` |
 | Admin AD groups | `Security__ADGroup`, `Security__DeveloperADGroup` |
+| Entra Graph sync (optional) | `DirectorySync__Entra__TenantId`, `DirectorySync__Entra__ClientId`, `DirectorySync__Entra__ClientSecret` |
 
 In **Production**, the apps refuse to start when:
 

@@ -45,7 +45,8 @@
   <data name="SyncFromAd" xml:space="preserve"><value>Синхронизировать из AD</value></data>
   <data name="ResolveSids" xml:space="preserve"><value>Разрешить SID</value></data>
   <data name="DirectoryWindowsOnly" xml:space="preserve"><value>Службы каталогов доступны только в Windows.</value></data>
-  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Group</value></data>
+  <data name="DirectoryUnavailable" xml:space="preserve"><value>Каталог недоступен. Настройте Windows/AD или DirectorySync:Entra.</value></data>
+  <data name="PlaceholderAdGroup" xml:space="preserve"><value>DOMAIN\Group или entra:GroupName</value></data>
   <data name="PlaceholderUsers" xml:space="preserve"><value>напр. peke, alice</value></data>
   <data name="PlaceholderUser" xml:space="preserve"><value>DOMAIN\user или samAccountName</value></data>
   <data name="PlaceholderAdUsers" xml:space="preserve"><value>DOMAIN\DesktopOps-Users</value></data>

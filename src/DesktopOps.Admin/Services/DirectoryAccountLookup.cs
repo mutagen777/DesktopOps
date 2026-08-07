@@ -7,18 +7,20 @@ namespace DesktopOps.Admin.Services;
 /// <summary>Resolved directory account used for group membership.</summary>
 public sealed record DirectoryAccount(string UserName, string? WindowsSid, string? DisplayName);
 
-/// <summary>Looks up Windows / Active Directory users and group members.</summary>
+/// <summary>Looks up directory users and group members (Windows/AD and/or Entra ID).</summary>
 public interface IDirectoryAccountLookup
 {
-    /// <summary>True when running on Windows and directory APIs are usable.</summary>
+    /// <summary>True when at least one directory backend is configured and usable.</summary>
     bool IsAvailable { get; }
 
-    /// <summary>Resolves a user by SAM account name, UPN, or DOMAIN\user.</summary>
-    DirectoryAccount? ResolveUser(string userName);
+    /// <summary>Resolves a user by SAM account name, UPN, DOMAIN\user, or Entra object id.</summary>
+    Task<DirectoryAccount?> ResolveUserAsync(string userName, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists enabled user principals that are members of the given AD/local group.</summary>
+    /// <summary>Lists enabled user principals that are members of the given directory group.</summary>
     /// <exception cref="DirectoryGroupLookupException">Group missing or directory error.</exception>
-    IReadOnlyList<DirectoryAccount> GetGroupMembers(string groupName);
+    Task<IReadOnlyList<DirectoryAccount>> GetGroupMembersAsync(
+        string groupName,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>Directory group could not be resolved or queried.</summary>
@@ -34,6 +36,41 @@ public sealed class DirectoryGroupLookupException : Exception
     }
 }
 
+/// <summary>Helpers for Entra vs Windows group reference strings.</summary>
+public static class DirectoryGroupReference
+{
+    public const string EntraPrefix = "entra:";
+
+    /// <summary>True when the value is an Entra object id or uses the entra: prefix.</summary>
+    public static bool IsEntraReference(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var trimmed = value.Trim();
+        if (trimmed.StartsWith(EntraPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return Guid.TryParse(trimmed, out _);
+    }
+
+    /// <summary>Strips the optional entra: prefix; returns remaining group id or name.</summary>
+    public static string NormalizeEntraReference(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.StartsWith(EntraPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed[EntraPrefix.Length..].Trim();
+        }
+
+        return trimmed;
+    }
+}
+
 /// <summary>Windows AccountManagement-based directory lookup.</summary>
 [SupportedOSPlatform("windows")]
 public sealed class WindowsDirectoryAccountLookup : IDirectoryAccountLookup
@@ -42,7 +79,22 @@ public sealed class WindowsDirectoryAccountLookup : IDirectoryAccountLookup
     public bool IsAvailable => OperatingSystem.IsWindows();
 
     /// <inheritdoc />
-    public DirectoryAccount? ResolveUser(string userName)
+    public Task<DirectoryAccount?> ResolveUserAsync(string userName, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(ResolveUser(userName));
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<DirectoryAccount>> GetGroupMembersAsync(
+        string groupName,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(GetGroupMembers(groupName));
+    }
+
+    private DirectoryAccount? ResolveUser(string userName)
     {
         if (!IsAvailable || string.IsNullOrWhiteSpace(userName))
         {
@@ -64,8 +116,7 @@ public sealed class WindowsDirectoryAccountLookup : IDirectoryAccountLookup
         }
     }
 
-    /// <inheritdoc />
-    public IReadOnlyList<DirectoryAccount> GetGroupMembers(string groupName)
+    private IReadOnlyList<DirectoryAccount> GetGroupMembers(string groupName)
     {
         if (!IsAvailable || string.IsNullOrWhiteSpace(groupName))
         {
@@ -179,15 +230,19 @@ public sealed class WindowsDirectoryAccountLookup : IDirectoryAccountLookup
     }
 }
 
-/// <summary>No-op lookup used on non-Windows hosts.</summary>
+/// <summary>No-op lookup used when no directory backend is available.</summary>
 public sealed class NullDirectoryAccountLookup : IDirectoryAccountLookup
 {
     /// <inheritdoc />
     public bool IsAvailable => false;
 
     /// <inheritdoc />
-    public DirectoryAccount? ResolveUser(string userName) => null;
+    public Task<DirectoryAccount?> ResolveUserAsync(string userName, CancellationToken cancellationToken = default)
+        => Task.FromResult<DirectoryAccount?>(null);
 
     /// <inheritdoc />
-    public IReadOnlyList<DirectoryAccount> GetGroupMembers(string groupName) => [];
+    public Task<IReadOnlyList<DirectoryAccount>> GetGroupMembersAsync(
+        string groupName,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<DirectoryAccount>>([]);
 }
