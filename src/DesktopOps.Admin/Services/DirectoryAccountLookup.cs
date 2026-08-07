@@ -17,7 +17,21 @@ public interface IDirectoryAccountLookup
     DirectoryAccount? ResolveUser(string userName);
 
     /// <summary>Lists enabled user principals that are members of the given AD/local group.</summary>
+    /// <exception cref="DirectoryGroupLookupException">Group missing or directory error.</exception>
     IReadOnlyList<DirectoryAccount> GetGroupMembers(string groupName);
+}
+
+/// <summary>Directory group could not be resolved or queried.</summary>
+public sealed class DirectoryGroupLookupException : Exception
+{
+    public DirectoryGroupLookupException(string message) : base(message)
+    {
+    }
+
+    public DirectoryGroupLookupException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
 
 /// <summary>Windows AccountManagement-based directory lookup.</summary>
@@ -67,7 +81,7 @@ public sealed class WindowsDirectoryAccountLookup : IDirectoryAccountLookup
 
             if (group is null)
             {
-                return [];
+                throw new DirectoryGroupLookupException($"Directory group not found: {trimmed}");
             }
 
             var results = new List<DirectoryAccount>();
@@ -87,9 +101,13 @@ public sealed class WindowsDirectoryAccountLookup : IDirectoryAccountLookup
                 .OrderBy(static item => item.UserName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
-        catch
+        catch (DirectoryGroupLookupException)
         {
-            return [];
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new DirectoryGroupLookupException($"Directory lookup failed for \"{trimmed}\".", ex);
         }
     }
 

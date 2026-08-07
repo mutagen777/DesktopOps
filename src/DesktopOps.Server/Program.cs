@@ -60,17 +60,22 @@ builder.Services.AddHealthChecks()
             var probe = Path.Combine(storageOptions.RootPath, ".health");
             File.WriteAllText(probe, DateTimeOffset.UtcNow.ToString("O"));
             File.Delete(probe);
-            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(storageOptions.RootPath);
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("writable");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Package storage not writable.", ex);
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Package storage not writable.");
         }
     });
 
 var app = builder.Build();
 
-ProductionGuards.EnsureServerReady(app.Environment, apiKeyOptions, provider, connectionString);
+ProductionGuards.EnsureServerReady(
+    app.Environment,
+    apiKeyOptions,
+    provider,
+    connectionString,
+    app.Logger);
 
 using (var scope = app.Services.CreateScope())
 {
@@ -82,7 +87,7 @@ app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseMiddleware<ApiKeyMiddleware>();
 
-app.MapHealthChecks("/health");
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
     Predicate = static check => check.Name is "database" or "storage"
@@ -93,7 +98,8 @@ app.MapGet("/", (ApiKeyOptions security) => Results.Ok(new
     name = "DesktopOps Server",
     version = "0.3.0",
     product = "DesktopOps",
-    apiKeyRequired = security.IsEnabled
+    apiKeyRequired = security.IsEnabled,
+    adminApiKeyRequired = security.HasSeparateAdminKey
 }));
 
 app.MapGet("/api/programs", async (DesktopOpsDbContext dbContext) =>
@@ -479,7 +485,7 @@ app.MapGet("/api/clients/{clientId:guid}/assignments", async (Guid clientId, Des
                     latest.IsMandatory,
                     latest.PackageHash,
                     latest.PackageSize,
-                    $"/api/packages/{latest.Id}"));
+                    $"/api/packages/{latest.Id}?clientId={client.Id}"));
     }).ToList();
 
     return Results.Ok(assignments);
@@ -526,7 +532,7 @@ app.MapGet("/api/clients/{clientId:guid}/updates", async (Guid clientId, string 
             release.PackageHash,
             release.PackageSize,
             release.RolloutPercent,
-            packageUrl = $"/api/packages/{release.Id}"
+            packageUrl = $"/api/packages/{release.Id}?clientId={clientId}"
         })
         .OrderByDescending(static release => ParseVersion(release.Version))
         .ToList();
@@ -561,12 +567,43 @@ app.MapPost("/api/clients/{clientId:guid}/events", async (Guid clientId, ClientD
     return Results.Ok(deploymentEvent);
 });
 
-app.MapGet("/api/packages/{releaseId:guid}", async (Guid releaseId, DesktopOpsDbContext dbContext, PackageStorageService storage) =>
+app.MapGet("/api/packages/{releaseId:guid}", async (
+    Guid releaseId,
+    Guid? clientId,
+    HttpContext httpContext,
+    DesktopOpsDbContext dbContext,
+    PackageStorageService storage) =>
 {
-    var release = await dbContext.ReleasePackages.FirstOrDefaultAsync(item => item.Id == releaseId);
+    var release = await dbContext.ReleasePackages
+        .Include(static item => item.Program)
+        .FirstOrDefaultAsync(item => item.Id == releaseId);
     if (release is null)
     {
         return Results.NotFound();
+    }
+
+    var role = httpContext.Items[ApiKeyOptions.RoleItemKey] as string;
+    if (string.Equals(role, ApiKeyOptions.RoleAgent, StringComparison.Ordinal))
+    {
+        if (clientId is null)
+        {
+            return Results.BadRequest(new { error = "clientId query parameter is required for agent downloads." });
+        }
+
+        var client = await dbContext.ClientRegistrations.FirstOrDefaultAsync(item => item.Id == clientId.Value);
+        if (client is null)
+        {
+            return Results.NotFound();
+        }
+
+        var assigned = await GetAssignedProgramsQuery(dbContext, client.UserName, client.WindowsSid)
+            .AnyAsync(program => program.Id == release.ProgramId);
+        if (!assigned)
+        {
+            return Results.Json(
+                new { error = "Forbidden", message = "Release is not assigned to this client." },
+                statusCode: StatusCodes.Status403Forbidden);
+        }
     }
 
     var absolutePath = storage.GetAbsolutePath(release.PackagePath);

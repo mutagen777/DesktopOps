@@ -1,8 +1,8 @@
-using DesktopOps.Admin.Services;
+using System.Collections.Concurrent;
 using DesktopOps.Server.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace DesktopOps.Admin;
+namespace DesktopOps.Admin.Services;
 
 /// <summary>Result of syncing one DesktopOps group from a directory group.</summary>
 public sealed record DirectoryGroupSyncResult(
@@ -16,6 +16,8 @@ public sealed record DirectoryGroupSyncResult(
 /// <summary>Imports directory group members into DesktopOps user groups.</summary>
 public sealed class DirectoryGroupSyncService
 {
+    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> GroupLocks = new();
+
     private readonly IDbContextFactory<DesktopOpsDbContext> _dbFactory;
     private readonly IDirectoryAccountLookup _directoryLookup;
     private readonly ILogger<DirectoryGroupSyncService> _logger;
@@ -34,6 +36,23 @@ public sealed class DirectoryGroupSyncService
         Guid groupId,
         string? adGroupNameOverride = null,
         CancellationToken cancellationToken = default)
+    {
+        var gate = GroupLocks.GetOrAdd(groupId, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            return await SyncGroupCoreAsync(groupId, adGroupNameOverride, cancellationToken);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private async Task<DirectoryGroupSyncResult> SyncGroupCoreAsync(
+        Guid groupId,
+        string? adGroupNameOverride,
+        CancellationToken cancellationToken)
     {
         await using var dbContext = await _dbFactory.CreateDbContextAsync(cancellationToken);
         var group = await dbContext.UserGroups
@@ -62,23 +81,23 @@ public sealed class DirectoryGroupSyncService
         IReadOnlyList<DirectoryAccount> accounts;
         try
         {
-            accounts = _directoryLookup.GetGroupMembers(adGroupName);
+            accounts = await Task.Run(
+                () => _directoryLookup.GetGroupMembers(adGroupName),
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (DirectoryGroupLookupException ex)
+        {
+            _logger.LogWarning(ex, "Directory lookup failed for group {AdGroup}", adGroupName);
+            return new DirectoryGroupSyncResult(groupId, adGroupName, 0, 0, 0, ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Directory lookup failed for group {AdGroup}", adGroupName);
             return new DirectoryGroupSyncResult(groupId, adGroupName, 0, 0, 0, ex.Message);
-        }
-
-        if (accounts.Count == 0)
-        {
-            return new DirectoryGroupSyncResult(
-                groupId,
-                adGroupName,
-                0,
-                0,
-                0,
-                $"No members found in \"{adGroupName}\" (or group unreachable).");
         }
 
         group.ActiveDirectoryGroup = adGroupName.Trim();
@@ -109,7 +128,16 @@ public sealed class DirectoryGroupSyncService
             added++;
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogWarning(ex, "Directory sync save failed for group {GroupId}", groupId);
+            return new DirectoryGroupSyncResult(groupId, adGroupName, added, updated, accounts.Count, ex.Message);
+        }
+
         _logger.LogInformation(
             "Directory sync \"{AdGroup}\" for {Group}: {Added} new, {Updated} SID updated, {Total} in directory",
             adGroupName,
@@ -133,7 +161,19 @@ public sealed class DirectoryGroupSyncService
         var results = new List<DirectoryGroupSyncResult>(groupIds.Count);
         foreach (var groupId in groupIds)
         {
-            results.Add(await SyncGroupAsync(groupId, cancellationToken: cancellationToken));
+            try
+            {
+                results.Add(await SyncGroupAsync(groupId, cancellationToken: cancellationToken));
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Scheduled sync failed for group {GroupId}", groupId);
+                results.Add(new DirectoryGroupSyncResult(groupId, "", 0, 0, 0, ex.Message));
+            }
         }
 
         return results;

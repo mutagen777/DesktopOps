@@ -3,7 +3,7 @@ using System.Text;
 
 namespace DesktopOps.Server;
 
-/// <summary>Shared API key settings for client and management API calls.</summary>
+/// <summary>API key settings for agent and optional admin management routes.</summary>
 public sealed class ApiKeyOptions
 {
     public const string SectionName = "Security";
@@ -11,21 +11,39 @@ public sealed class ApiKeyOptions
     /// <summary>Default header name for the API key.</summary>
     public const string DefaultHeaderName = "X-DesktopOps-Key";
 
+    /// <summary>HttpContext item key for the authenticated API role.</summary>
+    public const string RoleItemKey = "DesktopOps.ApiRole";
+
+    public const string RoleAdmin = "Admin";
+    public const string RoleAgent = "Agent";
+
     /// <summary>
-    /// Shared secret. When empty, API key checks are disabled (local demo).
+    /// Agent / fleet key. When <see cref="AdminApiKey"/> is empty, this key also unlocks management routes (demo / single-key mode).
     /// </summary>
     public string ApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Management API key for programs/groups/releases. When set, agents using only <see cref="ApiKey"/> cannot call those routes.
+    /// </summary>
+    public string AdminApiKey { get; set; } = string.Empty;
 
     /// <summary>HTTP header that carries the API key.</summary>
     public string ApiKeyHeader { get; set; } = DefaultHeaderName;
 
-    /// <summary>True when a non-empty API key is configured.</summary>
-    public bool IsEnabled => !string.IsNullOrWhiteSpace(ApiKey);
+    /// <summary>True when at least one API key is configured.</summary>
+    public bool IsEnabled =>
+        !string.IsNullOrWhiteSpace(ApiKey) || !string.IsNullOrWhiteSpace(AdminApiKey);
+
+    /// <summary>True when a dedicated admin key is configured.</summary>
+    public bool HasSeparateAdminKey => !string.IsNullOrWhiteSpace(AdminApiKey);
 }
 
-/// <summary>Requires <see cref="ApiKeyOptions.ApiKey"/> on <c>/api/*</c> when configured.</summary>
+/// <summary>Requires a valid API key on <c>/api/*</c> and enforces agent vs admin route scope.</summary>
 public sealed class ApiKeyMiddleware
 {
+    private static readonly PathString ClientsPrefix = new("/api/clients");
+    private static readonly PathString PackagesPrefix = new("/api/packages");
+
     private readonly RequestDelegate _next;
 
     /// <summary>Creates the middleware.</summary>
@@ -43,19 +61,47 @@ public sealed class ApiKeyMiddleware
             return;
         }
 
-        if (!TryGetPresentedKey(context.Request, options, out var presented)
-            || !FixedTimeEquals(presented, options.ApiKey))
+        if (!TryGetPresentedKey(context.Request, options, out var presented))
         {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await WriteUnauthorizedAsync(context, options);
+            return;
+        }
+
+        var isAdmin = Matches(presented, options.AdminApiKey)
+            || (!options.HasSeparateAdminKey && Matches(presented, options.ApiKey));
+        var isAgent = Matches(presented, options.ApiKey);
+
+        if (!isAdmin && !isAgent)
+        {
+            await WriteUnauthorizedAsync(context, options);
+            return;
+        }
+
+        var path = context.Request.Path;
+        var isAgentRoute = path.StartsWithSegments(ClientsPrefix) || path.StartsWithSegments(PackagesPrefix);
+        if (!isAgentRoute && !isAdmin)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
             await context.Response.WriteAsJsonAsync(new
             {
-                error = "Unauthorized",
-                message = $"Missing or invalid API key. Send header '{options.ApiKeyHeader}'."
+                error = "Forbidden",
+                message = "Management API routes require Security:AdminApiKey when it is configured."
             });
             return;
         }
 
+        context.Items[ApiKeyOptions.RoleItemKey] = isAdmin ? ApiKeyOptions.RoleAdmin : ApiKeyOptions.RoleAgent;
         await _next(context);
+    }
+
+    private static async Task WriteUnauthorizedAsync(HttpContext context, ApiKeyOptions options)
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "Unauthorized",
+            message = $"Missing or invalid API key. Send header '{options.ApiKeyHeader}'."
+        });
     }
 
     private static bool TryGetPresentedKey(HttpRequest request, ApiKeyOptions options, out string key)
@@ -79,8 +125,13 @@ public sealed class ApiKeyMiddleware
         return false;
     }
 
-    private static bool FixedTimeEquals(string presented, string expected)
+    private static bool Matches(string presented, string expected)
     {
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return false;
+        }
+
         var left = Encoding.UTF8.GetBytes(presented.Trim());
         var right = Encoding.UTF8.GetBytes(expected.Trim());
         return left.Length == right.Length

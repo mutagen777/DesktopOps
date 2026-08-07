@@ -23,6 +23,8 @@ Background sync runs inside **DesktopOps.Admin** when enabled:
 
 - Syncs every N minutes (minimum 5) for all groups that have `ActiveDirectoryGroup` set
 - Same upsert rules as the manual button (adds members / fills SIDs; does **not** remove users who left the AD group)
+- Empty but resolvable AD groups still store `ActiveDirectoryGroup`; missing groups / LDAP errors return a distinct error
+- Per-group lock prevents concurrent manual + scheduled sync collisions
 - Requires Windows + directory reachability; no-ops cleanly otherwise
 - Production template enables it by default — turn off if Admin cannot reach AD
 

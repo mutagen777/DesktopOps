@@ -194,20 +194,27 @@
             return;
         }
 
-        var result = await DirectorySync.SyncGroupAsync(groupId, adGroupName);
-        if (result.Error is not null)
+        try
         {
-            statusMessage = result.DirectoryMemberCount == 0 && result.Error.Contains("No members", StringComparison.OrdinalIgnoreCase)
-                ? L["NoMembersInAd", adGroupName]
-                : result.Error.Contains("Directory services", StringComparison.OrdinalIgnoreCase)
+            var result = await DirectorySync.SyncGroupAsync(groupId, adGroupName);
+            if (result.Error is not null)
+            {
+                statusMessage = result.Error.Contains("Directory services", StringComparison.OrdinalIgnoreCase)
                     ? L["DirectoryWindowsOnly"]
-                    : result.Error;
-            return;
-        }
+                    : result.Error.Contains("not found", StringComparison.OrdinalIgnoreCase)
+                        ? L["NoMembersInAd", adGroupName]
+                        : result.Error;
+                return;
+            }
 
-        pendingAdGroups[groupId] = result.AdGroupName;
-        statusMessage = L["AdSyncResult", result.AdGroupName, result.Added, result.Updated, result.DirectoryMemberCount];
-        await LoadAsync();
+            pendingAdGroups[groupId] = result.AdGroupName;
+            statusMessage = L["AdSyncResult", result.AdGroupName, result.Added, result.Updated, result.DirectoryMemberCount];
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = ex.Message;
+        }
     }
 
     private async Task ResolveMissingSidsAsync(Guid groupId)

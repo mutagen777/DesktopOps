@@ -20,9 +20,12 @@ Sign the Velopack build with your code-signing certificate:
 
 What `-CertThumbprint` does in `pack-agent.ps1`:
 
-1. Signs `*.exe` in the publish folder before `vpk pack`
-2. Passes Velopack `--signTemplate` so pack-produced binaries are signed
-3. Re-signs `Setup.exe` / agent EXEs in the output folder
+1. Cleans the publish folder, then publishes
+2. Validates thumbprint (40 hex chars) and timestamp URL
+3. Signs `*.exe` in the publish folder before `vpk pack`
+4. Signs all `*.exe` under the Velopack output folder after pack
+
+Velopack `--signTemplate` is **not** used (avoids `cmd.exe` injection). Prefer post-pack `signtool` signing.
 
 Requirements: Windows SDK **signtool**, certificate with private key, outbound access to the timestamp URL (default DigiCert).
 

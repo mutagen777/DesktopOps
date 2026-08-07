@@ -17,14 +17,15 @@ Prefer secrets via environment variables (do not commit real keys):
 
 | Setting | Env var |
 |---------|---------|
-| API key | `Security__ApiKey` |
+| API key | `Security__ApiKey` (agent) |
+| Admin API key | `Security__AdminApiKey` (management) |
 | SQL connection | `ConnectionStrings__DesktopOps` |
 | Package storage | `Storage__RootPath` |
 | Admin AD groups | `Security__ADGroup`, `Security__DeveloperADGroup` |
 
 In **Production**, the apps refuse to start when:
 
-- Server: `Security:ApiKey` is empty, or connection string still looks like the local demo DB
+- Server: `Security:ApiKey` / `Security:AdminApiKey` missing, too short (&lt;32), placeholder-like, or identical; or connection string still looks like the local demo DB
 - Admin: `Security:Enabled` is false / AD groups missing, or demo connection string
 
 ## 2. Authentication
@@ -89,7 +90,7 @@ Server health (no API key required):
 
 | URL | Meaning |
 |-----|---------|
-| `GET /health` | Process up + registered checks |
+| `GET /health` | Process up (liveness, no dependency checks) |
 | `GET /health/ready` | Database + package storage writable |
 | `GET /` | Product info + `apiKeyRequired` |
 

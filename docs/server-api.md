@@ -8,17 +8,23 @@ Optional shared API key for all `/api/*` routes:
 
 ```json
 "Security": {
-  "ApiKey": "change-me",
+  "ApiKey": "agent-fleet-secret-at-least-32-chars",
+  "AdminApiKey": "admin-management-secret-at-least-32-chars",
   "ApiKeyHeader": "X-DesktopOps-Key"
 }
 ```
 
-- Empty `ApiKey` → auth disabled (local demo)
+- Empty `ApiKey` and `AdminApiKey` → auth disabled (local demo)
+- **Agent key** (`ApiKey`): `/api/clients/*` and `/api/packages/*` only (when `AdminApiKey` is set)
+- **Admin key** (`AdminApiKey`): all `/api/*` management routes (programs, groups, releases, …)
+- Single-key mode: if `AdminApiKey` is empty, `ApiKey` unlocks everything (not allowed in Production)
 - Clients send `X-DesktopOps-Key: <value>` (or `Authorization: ApiKey <value>`)
-- `GET /` stays open and reports `apiKeyRequired`
-- `GET /health` and `GET /health/ready` stay open for monitoring (database + storage)
+- `GET /` stays open and reports `apiKeyRequired` / `adminApiKeyRequired`
+- `GET /health` liveness (no deps); `GET /health/ready` database + storage (no path leakage)
+- Agent package downloads require `?clientId=` and an assignment to that program
 
 Agent: `Agent:ApiKey` in `appsettings.json`. Embedded clients: `UpdateOptions.ApiKey`.
+Production: set both keys via env (`Security__ApiKey`, `Security__AdminApiKey`) — placeholders are rejected.
 
 ## Admin
 

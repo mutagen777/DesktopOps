@@ -71,6 +71,20 @@ function Resolve-SignTool {
     throw "signtool.exe not found. Install Windows SDK or pass -SignToolPath."
 }
 
+function Resolve-Vpk {
+    $cmd = Get-Command vpk -ErrorAction SilentlyContinue
+    if ($cmd) {
+        return $cmd.Source
+    }
+
+    $candidate = Join-Path $env:USERPROFILE ".dotnet\tools\vpk.exe"
+    if (Test-Path -LiteralPath $candidate) {
+        return $candidate
+    }
+
+    return $null
+}
+
 function Invoke-AuthenticodeSign {
     param(
         [string] $SignTool,
@@ -97,6 +111,20 @@ $signTool = $null
 if ($signEnabled) {
     $signTool = Resolve-SignTool -ExplicitPath $SignToolPath
     $CertThumbprint = ($CertThumbprint -replace '\s', '').ToUpperInvariant()
+    if ($CertThumbprint -notmatch '^[0-9A-F]{40}$') {
+        throw "CertThumbprint must be a 40-character hex SHA-1 thumbprint."
+    }
+
+    $uri = $null
+    if (-not [Uri]::TryCreate($TimestampUrl, [UriKind]::Absolute, [ref]$uri) `
+        -or ($uri.Scheme -ne [Uri]::UriSchemeHttp -and $uri.Scheme -ne [Uri]::UriSchemeHttps)) {
+        throw "TimestampUrl must be an absolute http(s) URL."
+    }
+}
+
+if (Test-Path -LiteralPath $PublishDir) {
+    Write-Host "Cleaning publish dir $PublishDir"
+    Remove-Item -LiteralPath $PublishDir -Recurse -Force
 }
 
 Write-Host "Publishing Agent $Version -> $PublishDir"
@@ -111,12 +139,16 @@ if ($signEnabled) {
     }
 }
 
-$vpk = Get-Command vpk -ErrorAction SilentlyContinue
-if (-not $vpk) {
+$vpkPath = Resolve-Vpk
+if (-not $vpkPath) {
     Write-Host "Installing vpk global tool..."
     dotnet tool install -g vpk
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to install vpk. Run: dotnet tool install -g vpk"
+    }
+    $vpkPath = Resolve-Vpk
+    if (-not $vpkPath) {
+        throw "vpk installed but not found under %USERPROFILE%\.dotnet\tools"
     }
 }
 
@@ -133,21 +165,16 @@ $packArgs = @(
     "--framework", "net8.0-x64-desktop"
 )
 
-if ($signEnabled) {
-    # Velopack substitutes {{file}} for each produced binary during pack.
-    $template = "& `"$signTool`" sign /fd SHA256 /sha1 $CertThumbprint /tr $TimestampUrl /td SHA256 `"{{file}}`""
-    $packArgs += @("--signTemplate", $template)
-}
+# Skip Velopack --signTemplate (cmd injection surface). Sign publish + output EXEs with signtool instead.
 
 Write-Host "Packing Velopack release..."
-& vpk @packArgs
+& $vpkPath @packArgs
 if ($LASTEXITCODE -ne 0) {
     throw "vpk pack failed"
 }
 
 if ($signEnabled) {
-    Get-ChildItem -LiteralPath $OutputDir -Include "Setup.exe", "*.exe" -File -Recurse -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -match 'Setup|DesktopOps\.Agent' } |
+    Get-ChildItem -LiteralPath $OutputDir -Filter "*.exe" -File -Recurse -ErrorAction SilentlyContinue |
         ForEach-Object {
             Invoke-AuthenticodeSign -SignTool $signTool -FilePath $_.FullName -Thumbprint $CertThumbprint -Timestamp $TimestampUrl
         }
