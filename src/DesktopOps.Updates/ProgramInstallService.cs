@@ -106,6 +106,30 @@ public sealed class ProgramInstallService
         }
 
         var zipPath = Path.Combine(_installationDirectory, $"{slug}-{manifest.Version}-backup.zip");
+        return WriteInstallSnapshotZip(manifest, zipPath);
+    }
+
+    /// <summary>Writes a full ZIP of the currently installed program files to <paramref name="zipPath"/>.</summary>
+    public bool CreateInstallSnapshotZip(string slug, string zipPath)
+    {
+        var manifest = GetInstalledPrograms()
+            .FirstOrDefault(item => string.Equals(item.Slug, slug, StringComparison.OrdinalIgnoreCase));
+        if (manifest is null)
+        {
+            return false;
+        }
+
+        return WriteInstallSnapshotZip(manifest, zipPath);
+    }
+
+    private bool WriteInstallSnapshotZip(ProgramInstallationManifest manifest, string zipPath)
+    {
+        var directory = Path.GetDirectoryName(zipPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
         if (File.Exists(zipPath))
         {
             File.Delete(zipPath);
@@ -124,11 +148,21 @@ public sealed class ProgramInstallService
             archive.CreateEntryFromFile(absolutePath, relativeFile.Replace('\\', '/'));
         }
 
-        foreach (var oldBackup in Directory.EnumerateFiles(_installationDirectory, $"{slug}-*-backup.zip"))
+        // Only prune install-dir backups when writing a backup there (not cache snapshots for delta).
+        var isInstallBackup = zipPath.EndsWith("-backup.zip", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(
+                Path.GetFullPath(Path.GetDirectoryName(zipPath) ?? string.Empty),
+                Path.GetFullPath(_installationDirectory),
+                StringComparison.OrdinalIgnoreCase);
+        if (isInstallBackup)
         {
-            if (!string.Equals(oldBackup, zipPath, StringComparison.OrdinalIgnoreCase))
+            var slug = manifest.Slug;
+            foreach (var oldBackup in Directory.EnumerateFiles(_installationDirectory, $"{slug}-*-backup.zip"))
             {
-                File.Delete(oldBackup);
+                if (!string.Equals(oldBackup, zipPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Delete(oldBackup);
+                }
             }
         }
 
@@ -154,12 +188,7 @@ public sealed class ProgramInstallService
         }
 
         File.Delete(manifestPath);
-
-        foreach (var backup in Directory.EnumerateFiles(_installationDirectory, $"{slug}-*-backup.zip"))
-        {
-            File.Delete(backup);
-        }
-
+        // Keep *-backup.zip for rollback/delta base; do not delete here.
         return true;
     }
 
@@ -167,14 +196,18 @@ public sealed class ProgramInstallService
         AssignedProgram program,
         string zipPath,
         string expectedHash,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool skipPackageHashVerification = false)
     {
         ArgumentNullException.ThrowIfNull(program.LatestRelease);
 
-        var actualHash = ComputeSha256(zipPath);
-        if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
+        if (!skipPackageHashVerification)
         {
-            return false;
+            var actualHash = ComputeSha256(zipPath);
+            if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
         }
 
         var extractRoot = Path.Combine(_installationDirectory, "_extract", program.Slug);

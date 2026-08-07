@@ -64,6 +64,7 @@
                 <th>@L["Version"]</th>
                 <th>@L["Sha256"]</th>
                 <th>@L["CmsSigned"]</th>
+                <th>@L["Delta"]</th>
                 <th>@L["Size"]</th>
                 <th>@L["Rollout"]</th>
                 <th>@L["Status"]</th>
@@ -74,7 +75,7 @@
             @if (releases.Count == 0)
             {
                 <tr>
-                    <td colspan="8" class="text-muted">@L["NoReleases"]</td>
+                    <td colspan="9" class="text-muted">@L["NoReleases"]</td>
                 </tr>
             }
             else
@@ -86,6 +87,16 @@
                         <td>@release.Version</td>
                         <td class="hash-cell">@(string.IsNullOrEmpty(release.PackageHash) ? "—" : release.PackageHash[..Math.Min(12, release.PackageHash.Length)] + "…")</td>
                         <td>@(string.IsNullOrWhiteSpace(release.SignaturePath) ? "—" : L["Yes"])</td>
+                        <td>
+                            @if (string.IsNullOrWhiteSpace(release.DeltaPath))
+                            {
+                                <span>—</span>
+                            }
+                            else
+                            {
+                                <span title="@release.DeltaBaseVersion">@FormatSize(release.DeltaSize ?? 0)</span>
+                            }
+                        </td>
                         <td>@FormatSize(release.PackageSize)</td>
                         <td>
                             <div class="d-flex gap-1 align-items-center">
@@ -112,6 +123,10 @@
                             }
                         </td>
                         <td class="text-end">
+                            @if (string.IsNullOrWhiteSpace(release.DeltaPath))
+                            {
+                                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => GenerateDeltaAsync(release.Id)">@L["GenerateDelta"]</button>
+                            }
                             @if (release.PublishedAtUtc is null)
                             {
                                 <button class="btn btn-sm btn-primary" @onclick="() => PublishAsync(release.Id)">@L["Publish"]</button>
@@ -195,7 +210,7 @@
             return;
         }
 
-        dbContext.ReleasePackages.Add(new ReleasePackage
+        var release = new ReleasePackage
         {
             ProgramId = program.Id,
             Version = version.Trim(),
@@ -207,8 +222,16 @@
             ReleaseNotes = releaseNotes?.Trim(),
             IsMandatory = isMandatory,
             RolloutPercent = Math.Clamp(rolloutPercent, 0, 100)
-        });
+        };
 
+        var previousPackages = await dbContext.ReleasePackages
+            .AsNoTracking()
+            .Where(item => item.ProgramId == program.Id)
+            .ToListAsync();
+        var previous = ReleaseDeltaHelper.FindPreviousRelease(previousPackages, release.Version);
+        var deltaAttached = previous is not null && ReleaseDeltaHelper.TryAttachDelta(PackageStorage, release, previous);
+
+        dbContext.ReleasePackages.Add(release);
         await dbContext.SaveChangesAsync();
         packageFile = null;
         signatureFile = null;
@@ -216,9 +239,50 @@
         version = string.Empty;
         isMandatory = false;
         rolloutPercent = 100;
-        statusMessage = string.IsNullOrWhiteSpace(signaturePath)
-            ? L["ReleaseUploadedUnsigned"]
-            : L["ReleaseUploadedSigned"];
+        if (deltaAttached)
+        {
+            statusMessage = string.Format(L["ReleaseUploadedWithDelta"], release.DeltaBaseVersion);
+        }
+        else
+        {
+            statusMessage = string.IsNullOrWhiteSpace(signaturePath)
+                ? L["ReleaseUploadedUnsigned"]
+                : L["ReleaseUploadedSigned"];
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task GenerateDeltaAsync(Guid releaseId)
+    {
+        statusMessage = null;
+        await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var release = await dbContext.ReleasePackages.FirstAsync(item => item.Id == releaseId);
+        if (!string.IsNullOrWhiteSpace(release.DeltaPath))
+        {
+            statusMessage = L["DeltaAlreadyPresent"];
+            return;
+        }
+
+        var previousPackages = await dbContext.ReleasePackages
+            .AsNoTracking()
+            .Where(item => item.ProgramId == release.ProgramId && item.Id != release.Id)
+            .ToListAsync();
+        var previous = ReleaseDeltaHelper.FindPreviousRelease(previousPackages, release.Version);
+        if (previous is null)
+        {
+            statusMessage = L["DeltaNoPrevious"];
+            return;
+        }
+
+        if (!ReleaseDeltaHelper.TryAttachDelta(PackageStorage, release, previous))
+        {
+            statusMessage = L["DeltaSkipped"];
+            return;
+        }
+
+        await dbContext.SaveChangesAsync();
+        statusMessage = string.Format(L["DeltaGenerated"], release.DeltaBaseVersion);
         await LoadAsync();
     }
 

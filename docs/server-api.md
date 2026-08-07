@@ -57,6 +57,8 @@ Staged rollout details: [Staged rollouts](staged-rollouts.md).
 | POST | `/api/clients/{id}/events` | Report deployment status |
 | GET | `/api/packages/{releaseId}` | Download package bytes (`?clientId=` required for agent key) |
 | GET | `/api/packages/{releaseId}/signature` | Download detached CMS `.p7s` (same auth rules; 404 if unsigned) |
+| GET | `/api/packages/{releaseId}/delta` | Download optional delta ZIP (same auth rules; 404 if none) |
+| POST | `/api/releases/{id}/delta` | Build or rebuild delta against the previous version (admin) |
 
 ### Register body
 
@@ -89,10 +91,16 @@ Embedded apps set their own product slug.
     "packageHash": "abc123...",
     "packageSize": 12345,
     "packageUrl": "/api/packages/...?clientId=...",
-    "signatureUrl": "/api/packages/.../signature?clientId=..."
+    "signatureUrl": "/api/packages/.../signature?clientId=...",
+    "deltaUrl": "/api/packages/.../delta?clientId=...",
+    "deltaHash": "...",
+    "deltaSize": 1234,
+    "deltaBaseVersion": "1.1.0"
   }
 }
 ```
+
+Delta details: [Delta updates](delta-updates.md).
 
 ### Event body
 

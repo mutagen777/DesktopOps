@@ -83,6 +83,13 @@
   <data name="CmsSignatureFailed" xml:space="preserve"><value>Проверка или подпись пакета не удалась.</value></data>
   <data name="ReleaseUploadedSigned" xml:space="preserve"><value>Релиз загружен с CMS-подписью.</value></data>
   <data name="ReleaseUploadedUnsigned" xml:space="preserve"><value>Релиз загружен (без CMS-подписи).</value></data>
+  <data name="Delta" xml:space="preserve"><value>Дельта</value></data>
+  <data name="GenerateDelta" xml:space="preserve"><value>Создать дельту</value></data>
+  <data name="DeltaGenerated" xml:space="preserve"><value>Дельта создана от версии {0}.</value></data>
+  <data name="DeltaSkipped" xml:space="preserve"><value>Дельта не создана (пакеты одинаковы или недостаточно меньше).</value></data>
+  <data name="DeltaNoPrevious" xml:space="preserve"><value>Нет более старой версии пакета для дельты.</value></data>
+  <data name="DeltaAlreadyPresent" xml:space="preserve"><value>У этого релиза уже есть дельта.</value></data>
+  <data name="ReleaseUploadedWithDelta" xml:space="preserve"><value>Релиз загружен с дельтой от версии {0}.</value></data>
   <data name="Yes" xml:space="preserve"><value>Да</value></data>
   <data name="TimeUtc" xml:space="preserve"><value>Время (UTC)</value></data>
   <data name="User" xml:space="preserve"><value>Пользователь</value></data>

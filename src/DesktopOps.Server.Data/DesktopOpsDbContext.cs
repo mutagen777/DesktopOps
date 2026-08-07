@@ -78,6 +78,9 @@ public sealed class DesktopOpsDbContext : DbContext
             entity.Property(static item => item.OriginalFileName).HasMaxLength(260);
             entity.Property(static item => item.PackageHash).HasMaxLength(128);
             entity.Property(static item => item.SignaturePath).HasMaxLength(260);
+            entity.Property(static item => item.DeltaPath).HasMaxLength(260);
+            entity.Property(static item => item.DeltaHash).HasMaxLength(128);
+            entity.Property(static item => item.DeltaBaseVersion).HasMaxLength(50);
         });
 
         modelBuilder.Entity<ClientRegistration>(entity =>

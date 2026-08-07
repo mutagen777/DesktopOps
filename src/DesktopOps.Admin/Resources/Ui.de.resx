@@ -83,6 +83,13 @@
   <data name="CmsSignatureFailed" xml:space="preserve"><value>Paketsignatur-Prüfung oder Signierung fehlgeschlagen.</value></data>
   <data name="ReleaseUploadedSigned" xml:space="preserve"><value>Release mit CMS-Signatur hochgeladen.</value></data>
   <data name="ReleaseUploadedUnsigned" xml:space="preserve"><value>Release hochgeladen (ohne CMS-Signatur).</value></data>
+  <data name="Delta" xml:space="preserve"><value>Delta</value></data>
+  <data name="GenerateDelta" xml:space="preserve"><value>Delta erzeugen</value></data>
+  <data name="DeltaGenerated" xml:space="preserve"><value>Delta aus Version {0} erzeugt.</value></data>
+  <data name="DeltaSkipped" xml:space="preserve"><value>Delta wurde nicht erzeugt (Pakete identisch oder nicht klein genug).</value></data>
+  <data name="DeltaNoPrevious" xml:space="preserve"><value>Keine ältere Paketversion als Delta-Basis gefunden.</value></data>
+  <data name="DeltaAlreadyPresent" xml:space="preserve"><value>Dieses Release hat bereits ein Delta.</value></data>
+  <data name="ReleaseUploadedWithDelta" xml:space="preserve"><value>Release hochgeladen mit Delta aus Version {0}.</value></data>
   <data name="Yes" xml:space="preserve"><value>Ja</value></data>
   <data name="TimeUtc" xml:space="preserve"><value>Zeit (UTC)</value></data>
   <data name="User" xml:space="preserve"><value>Benutzer</value></data>

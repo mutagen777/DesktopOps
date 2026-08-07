@@ -103,30 +103,63 @@ public sealed class UpdateService : IUpdateService
         };
     }
 
-    public async Task<PreparedUpdatePackage> PrepareUpdateAsync(UpdateRelease release, CancellationToken cancellationToken = default)
+    public Task<PreparedUpdatePackage> PrepareUpdateAsync(
+        UpdateRelease release,
+        CancellationToken cancellationToken = default)
+    {
+        return PrepareUpdateAsync(release, basePackagePath: null, installedVersion: null, cancellationToken);
+    }
+
+    public async Task<PreparedUpdatePackage> PrepareUpdateAsync(
+        UpdateRelease release,
+        string? basePackagePath,
+        string? installedVersion,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(release);
 
         var client = await EnsureRegisteredAsync(cancellationToken);
         await ReportStatusAsync(release.Id, DeploymentStatus.Downloading, "Download started.", cancellationToken: cancellationToken);
 
-        var packageUri = new Uri(release.PackageUrl, UriKind.RelativeOrAbsolute);
-        if (!packageUri.IsAbsoluteUri)
-        {
-            packageUri = new Uri(_httpClient.BaseAddress!, packageUri);
-        }
-
         var slug = string.IsNullOrWhiteSpace(Options.ProgramSlug) ? "package" : Options.ProgramSlug;
         var fileName = $"{SanitizeFileName(slug)}-{SanitizeFileName(release.Version)}.zip";
         var targetPath = Path.Combine(Options.CacheDirectory, fileName);
 
-        await using (var sourceStream = await _httpClient.GetStreamAsync(packageUri, cancellationToken))
-        await using (var targetStream = File.Create(targetPath))
+        var usedDelta = false;
+        if (ShouldAttemptDelta(release, basePackagePath, installedVersion))
         {
-            await sourceStream.CopyToAsync(targetStream, cancellationToken);
+            try
+            {
+                await DownloadAndApplyDeltaAsync(release, basePackagePath!, targetPath, cancellationToken);
+                usedDelta = true;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                if (File.Exists(targetPath))
+                {
+                    File.Delete(targetPath);
+                }
+
+                // Fall through to full package download.
+            }
         }
 
-        if (!string.IsNullOrWhiteSpace(release.PackageHash))
+        if (!usedDelta)
+        {
+            var packageUri = new Uri(release.PackageUrl, UriKind.RelativeOrAbsolute);
+            if (!packageUri.IsAbsoluteUri)
+            {
+                packageUri = new Uri(_httpClient.BaseAddress!, packageUri);
+            }
+
+            await using (var sourceStream = await _httpClient.GetStreamAsync(packageUri, cancellationToken))
+            await using (var targetStream = File.Create(targetPath))
+            {
+                await sourceStream.CopyToAsync(targetStream, cancellationToken);
+            }
+        }
+
+        if (!usedDelta && !string.IsNullOrWhiteSpace(release.PackageHash))
         {
             var actualHash = ProgramInstallService.ComputeSha256(targetPath);
             if (!string.Equals(actualHash, release.PackageHash, StringComparison.OrdinalIgnoreCase))
@@ -136,16 +169,109 @@ public sealed class UpdateService : IUpdateService
             }
         }
 
-        await VerifyCmsSignatureAsync(release, targetPath, cancellationToken);
+        if (!usedDelta)
+        {
+            await VerifyCmsSignatureAsync(release, targetPath, cancellationToken);
+        }
 
-        await ReportStatusAsync(release.Id, DeploymentStatus.Available, "Download completed.", cancellationToken: cancellationToken);
+        await ReportStatusAsync(
+            release.Id,
+            DeploymentStatus.Available,
+            usedDelta ? "Download completed (delta)." : "Download completed.",
+            cancellationToken: cancellationToken);
 
         return new PreparedUpdatePackage
         {
             ClientId = client.Id,
             Release = release,
-            PackagePath = targetPath
+            PackagePath = targetPath,
+            VerifiedViaDeltaEntries = usedDelta
         };
+    }
+
+    private bool ShouldAttemptDelta(UpdateRelease release, string? basePackagePath, string? installedVersion)
+    {
+        if (!Options.EnableDeltaUpdates)
+        {
+            return false;
+        }
+
+        // Reconstructed ZIPs are not byte-identical to the published artifact, so CMS over the
+        // full package cannot be verified after a delta apply. Force the full download path.
+        if (Options.RequirePackageCmsSignature)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(release.DeltaUrl)
+            || string.IsNullOrWhiteSpace(release.DeltaHash)
+            || string.IsNullOrWhiteSpace(release.DeltaBaseVersion)
+            || string.IsNullOrWhiteSpace(basePackagePath)
+            || string.IsNullOrWhiteSpace(installedVersion)
+            || !File.Exists(basePackagePath))
+        {
+            return false;
+        }
+
+        if (!string.Equals(installedVersion.Trim(), release.DeltaBaseVersion.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (release.DeltaSize is { } deltaSize
+            && release.PackageSize > 0
+            && deltaSize >= release.PackageSize * Math.Clamp(Options.DeltaMaxSizeRatio, 0.05, 1.0))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task DownloadAndApplyDeltaAsync(
+        UpdateRelease release,
+        string basePackagePath,
+        string targetPackagePath,
+        CancellationToken cancellationToken)
+    {
+        var deltaUri = new Uri(release.DeltaUrl!, UriKind.RelativeOrAbsolute);
+        if (!deltaUri.IsAbsoluteUri)
+        {
+            deltaUri = new Uri(_httpClient.BaseAddress!, deltaUri);
+        }
+
+        var deltaPath = Path.Combine(
+            Options.CacheDirectory,
+            $"{SanitizeFileName(Path.GetFileNameWithoutExtension(targetPackagePath))}.delta.zip");
+
+        await using (var sourceStream = await _httpClient.GetStreamAsync(deltaUri, cancellationToken))
+        await using (var targetStream = File.Create(deltaPath))
+        {
+            await sourceStream.CopyToAsync(targetStream, cancellationToken);
+        }
+
+        var actualDeltaHash = ProgramInstallService.ComputeSha256(deltaPath);
+        if (!string.Equals(actualDeltaHash, release.DeltaHash, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Downloaded delta hash does not match the server hash.");
+        }
+
+        var manifest = PackageDeltaApplier.ApplyDelta(basePackagePath, deltaPath, targetPackagePath);
+        if (!string.IsNullOrWhiteSpace(manifest.TargetPackageHash)
+            && !string.IsNullOrWhiteSpace(release.PackageHash)
+            && !string.Equals(manifest.TargetPackageHash, release.PackageHash, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Delta manifest target hash does not match the release package hash.");
+        }
+
+        try
+        {
+            File.Delete(deltaPath);
+        }
+        catch
+        {
+            // Best-effort cache cleanup.
+        }
     }
 
     private async Task VerifyCmsSignatureAsync(

@@ -18,4 +18,14 @@ public sealed class UpdateRelease
 
     /// <summary>Optional URL for the detached CMS signature (.p7s).</summary>
     public string? SignatureUrl { get; set; }
+
+    /// <summary>Optional URL for a delta ZIP (zip of changed files).</summary>
+    public string? DeltaUrl { get; set; }
+
+    public string? DeltaHash { get; set; }
+
+    public long? DeltaSize { get; set; }
+
+    /// <summary>Local version that must be installed for the delta to apply.</summary>
+    public string? DeltaBaseVersion { get; set; }
 }

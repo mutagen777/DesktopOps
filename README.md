@@ -90,6 +90,7 @@ Runtime = DesktopOpsWpfBootstrapper.Initialize(this, options =>
 - [Production hardening](docs/production-hardening.md)
 - [Self-hosted deployment](docs/self-hosted.md)
 - [Package signing](docs/package-signing.md)
+- [Delta updates](docs/delta-updates.md)
 - [Commercial support](docs/commercial-support.md)
 - [Legal notices (template)](docs/legal-notices.md)
 - [Localization](docs/localization.md)
@@ -117,11 +118,11 @@ Included:
 Not included yet:
 
 - multi-tenant isolation
-- delta updates
 
 Scheduled AD/Windows and Entra ID (Graph) group sync is supported — see [Directory group sync](docs/directory-sync.md).
 Agent installer packaging via Velopack is supported — see [Agent installer](docs/agent-installer.md).
 Authenticode for Agent builds and detached CMS signatures for program ZIPs: [Package signing](docs/package-signing.md).
+Optional zip-of-changed-files deltas: [Delta updates](docs/delta-updates.md).
 Production hardening checklist: [Production hardening](docs/production-hardening.md).
 
 Staged percentage rollouts are supported — see [Staged rollouts](docs/staged-rollouts.md).

@@ -82,6 +82,17 @@ public sealed class ReleasePackage : TimestampEntity
     /// <summary>Relative path to detached CMS/PKCS#7 signature (.p7s), when present.</summary>
     public string? SignaturePath { get; set; }
 
+    /// <summary>Relative path to optional delta ZIP from <see cref="DeltaBaseVersion"/>.</summary>
+    public string? DeltaPath { get; set; }
+
+    /// <summary>SHA-256 of the delta ZIP.</summary>
+    public string? DeltaHash { get; set; }
+
+    public long? DeltaSize { get; set; }
+
+    /// <summary>Installed/base package version required to apply the delta.</summary>
+    public string? DeltaBaseVersion { get; set; }
+
     public string? ReleaseNotes { get; set; }
 
     public bool IsMandatory { get; set; }

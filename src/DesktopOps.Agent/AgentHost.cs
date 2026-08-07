@@ -46,7 +46,16 @@ internal sealed class AgentHost : IDisposable
                     ApiKey = agentSection["ApiKey"],
                     TrustedCmsThumbprints = agentSection["TrustedCmsThumbprints"],
                     RequirePackageCmsSignature = bool.TryParse(agentSection["RequirePackageCmsSignature"], out var requireCms)
-                        && requireCms
+                        && requireCms,
+                    EnableDeltaUpdates = !bool.TryParse(agentSection["EnableDeltaUpdates"], out var enableDelta)
+                        || enableDelta,
+                    DeltaMaxSizeRatio = double.TryParse(
+                        agentSection["DeltaMaxSizeRatio"],
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out var deltaRatio)
+                        ? Math.Clamp(deltaRatio, 0.05, 1.0)
+                        : 0.8
                 };
 
                 var diagnosticsOptions = new DiagnosticsOptions

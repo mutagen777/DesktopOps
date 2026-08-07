@@ -115,10 +115,46 @@ public sealed class PackageStorageService
     }
 
     /// <summary>Deletes the package and its detached signature if present (best-effort).</summary>
-    public void TryDeletePackageArtifacts(string packageRelativePath)
+    public void TryDeletePackageArtifacts(string packageRelativePath, string? deltaRelativePath = null)
     {
         TryDeleteFile(GetAbsolutePath(packageRelativePath));
         TryDeleteFile(GetAbsolutePath(GetDetachedSignatureRelativePath(packageRelativePath)));
+        if (!string.IsNullOrWhiteSpace(deltaRelativePath))
+        {
+            TryDeleteFile(GetAbsolutePath(deltaRelativePath));
+        }
+    }
+
+    /// <summary>Relative delta path: <c>{slug}/{version}.from-{baseVersion}.delta.zip</c>.</summary>
+    public static string GetDeltaRelativePath(string packageRelativePath, string baseVersion)
+    {
+        var directory = Path.GetDirectoryName(packageRelativePath) ?? string.Empty;
+        var fileName = Path.GetFileNameWithoutExtension(packageRelativePath);
+        var safeBase = Sanitize(baseVersion);
+        var deltaName = $"{fileName}.from-{safeBase}.delta.zip";
+        return string.IsNullOrEmpty(directory)
+            ? deltaName
+            : Path.Combine(directory, deltaName);
+    }
+
+    /// <summary>Builds a delta ZIP from an existing base package to this target package.</summary>
+    public (string RelativePath, string Sha256Hash, long SizeBytes) CreateDeltaFromPackages(
+        string basePackageRelativePath,
+        string targetPackageRelativePath,
+        string baseVersion,
+        string targetVersion,
+        string targetPackageHash)
+    {
+        var relativeDelta = GetDeltaRelativePath(targetPackageRelativePath, baseVersion);
+        var absoluteDelta = GetAbsolutePath(relativeDelta);
+        var (hash, size) = PackageDeltaBuilder.CreateDeltaZip(
+            GetAbsolutePath(basePackageRelativePath),
+            GetAbsolutePath(targetPackageRelativePath),
+            baseVersion,
+            targetVersion,
+            targetPackageHash,
+            absoluteDelta);
+        return (relativeDelta, hash, size);
     }
 
     /// <summary>Signs the package on disk and returns the relative <c>.p7s</c> path.</summary>

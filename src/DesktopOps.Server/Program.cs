@@ -241,6 +241,9 @@ app.MapGet("/api/releases", async (DesktopOpsDbContext dbContext) =>
             release.OriginalFileName,
             release.PackageHash,
             release.PackageSize,
+            release.DeltaHash,
+            release.DeltaSize,
+            release.DeltaBaseVersion,
             release.ReleaseNotes,
             release.IsMandatory,
             release.RolloutPercent,
@@ -338,6 +341,16 @@ app.MapPost("/api/releases", async (
         RolloutPercent = rolloutPercent
     };
 
+    var previousPackages = await dbContext.ReleasePackages
+        .AsNoTracking()
+        .Where(item => item.ProgramId == programId)
+        .ToListAsync(cancellationToken);
+    var previous = ReleaseDeltaHelper.FindPreviousRelease(previousPackages, version);
+    if (previous is not null)
+    {
+        ReleaseDeltaHelper.TryAttachDelta(storage, release, previous);
+    }
+
     dbContext.ReleasePackages.Add(release);
     await dbContext.SaveChangesAsync(cancellationToken);
     return Results.Ok(new
@@ -349,6 +362,10 @@ app.MapPost("/api/releases", async (
         release.PackageHash,
         release.PackageSize,
         release.SignaturePath,
+        release.DeltaPath,
+        release.DeltaHash,
+        release.DeltaSize,
+        release.DeltaBaseVersion,
         release.ReleaseNotes,
         release.IsMandatory,
         release.RolloutPercent,
@@ -403,6 +420,51 @@ app.MapPatch("/api/releases/{releaseId:guid}/rollout", async (Guid releaseId, Up
     release.RolloutPercent = Math.Clamp(request.RolloutPercent, 0, 100);
     await dbContext.SaveChangesAsync();
     return Results.Ok(new { release.Id, release.Version, release.RolloutPercent, release.PublishedAtUtc });
+});
+
+app.MapPost("/api/releases/{releaseId:guid}/delta", async (
+    Guid releaseId,
+    DesktopOpsDbContext dbContext,
+    PackageStorageService storage,
+    CancellationToken cancellationToken) =>
+{
+    var release = await dbContext.ReleasePackages.FirstOrDefaultAsync(item => item.Id == releaseId, cancellationToken);
+    if (release is null)
+    {
+        return Results.NotFound();
+    }
+
+    var previousPackages = await dbContext.ReleasePackages
+        .AsNoTracking()
+        .Where(item => item.ProgramId == release.ProgramId && item.Id != release.Id)
+        .ToListAsync(cancellationToken);
+    var previous = ReleaseDeltaHelper.FindPreviousRelease(previousPackages, release.Version);
+    if (previous is null)
+    {
+        return Results.BadRequest("No older published package version found to build a delta from.");
+    }
+
+    var previousDeltaPath = release.DeltaPath;
+    if (!ReleaseDeltaHelper.TryAttachDelta(storage, release, previous))
+    {
+        return Results.BadRequest("Delta was not created (packages identical or delta not smaller enough).");
+    }
+
+    if (!string.IsNullOrWhiteSpace(previousDeltaPath)
+        && !string.Equals(previousDeltaPath, release.DeltaPath, StringComparison.OrdinalIgnoreCase))
+    {
+        ReleaseDeltaHelper.TryDeleteDeltaOnly(storage, previousDeltaPath);
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return Results.Ok(new
+    {
+        release.Id,
+        release.DeltaPath,
+        release.DeltaHash,
+        release.DeltaSize,
+        release.DeltaBaseVersion
+    });
 });
 
 app.MapGet("/api/rollouts", async (DesktopOpsDbContext dbContext) =>
@@ -537,7 +599,13 @@ app.MapGet("/api/clients/{clientId:guid}/assignments", async (Guid clientId, Des
                     $"/api/packages/{latest.Id}?clientId={client.Id}",
                     string.IsNullOrWhiteSpace(latest.SignaturePath)
                         ? null
-                        : $"/api/packages/{latest.Id}/signature?clientId={client.Id}"));
+                        : $"/api/packages/{latest.Id}/signature?clientId={client.Id}",
+                    string.IsNullOrWhiteSpace(latest.DeltaPath)
+                        ? null
+                        : $"/api/packages/{latest.Id}/delta?clientId={client.Id}",
+                    latest.DeltaHash,
+                    latest.DeltaSize,
+                    latest.DeltaBaseVersion));
     }).ToList();
 
     return Results.Ok(assignments);
@@ -587,7 +655,13 @@ app.MapGet("/api/clients/{clientId:guid}/updates", async (Guid clientId, string 
             packageUrl = $"/api/packages/{release.Id}?clientId={clientId}",
             signatureUrl = string.IsNullOrWhiteSpace(release.SignaturePath)
                 ? null
-                : $"/api/packages/{release.Id}/signature?clientId={clientId}"
+                : $"/api/packages/{release.Id}/signature?clientId={clientId}",
+            deltaUrl = string.IsNullOrWhiteSpace(release.DeltaPath)
+                ? null
+                : $"/api/packages/{release.Id}/delta?clientId={clientId}",
+            release.DeltaHash,
+            release.DeltaSize,
+            release.DeltaBaseVersion
         })
         .OrderByDescending(static release => ParseVersion(release.Version))
         .ToList();
@@ -718,6 +792,54 @@ app.MapGet("/api/packages/{releaseId:guid}/signature", async (
     return Results.File(absolutePath, "application/pkcs7-signature", downloadName);
 });
 
+app.MapGet("/api/packages/{releaseId:guid}/delta", async (
+    Guid releaseId,
+    Guid? clientId,
+    HttpContext httpContext,
+    DesktopOpsDbContext dbContext,
+    PackageStorageService storage) =>
+{
+    var release = await dbContext.ReleasePackages
+        .FirstOrDefaultAsync(item => item.Id == releaseId);
+    if (release is null || string.IsNullOrWhiteSpace(release.DeltaPath))
+    {
+        return Results.NotFound();
+    }
+
+    var role = httpContext.Items[ApiKeyOptions.RoleItemKey] as string;
+    if (string.Equals(role, ApiKeyOptions.RoleAgent, StringComparison.Ordinal))
+    {
+        if (clientId is null)
+        {
+            return Results.BadRequest(new { error = "clientId query parameter is required for agent downloads." });
+        }
+
+        var client = await dbContext.ClientRegistrations.FirstOrDefaultAsync(item => item.Id == clientId.Value);
+        if (client is null)
+        {
+            return Results.NotFound();
+        }
+
+        var assigned = await GetAssignedProgramsQuery(dbContext, client.UserName, client.WindowsSid)
+            .AnyAsync(program => program.Id == release.ProgramId);
+        if (!assigned)
+        {
+            return Results.Json(
+                new { error = "Forbidden", message = "Release is not assigned to this client." },
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+    }
+
+    var absolutePath = storage.GetAbsolutePath(release.DeltaPath);
+    if (!File.Exists(absolutePath))
+    {
+        return Results.NotFound();
+    }
+
+    var downloadName = Path.GetFileName(release.DeltaPath);
+    return Results.File(absolutePath, "application/octet-stream", downloadName);
+});
+
 app.Run();
 
 static IQueryable<ManagedProgram> GetAssignedProgramsQuery(
@@ -800,4 +922,8 @@ internal sealed record AssignedReleaseDto(
     string PackageHash,
     long PackageSize,
     string PackageUrl,
-    string? SignatureUrl);
+    string? SignatureUrl,
+    string? DeltaUrl,
+    string? DeltaHash,
+    long? DeltaSize,
+    string? DeltaBaseVersion);

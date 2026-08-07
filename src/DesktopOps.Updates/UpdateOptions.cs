@@ -38,4 +38,10 @@ public sealed class UpdateOptions
 
     /// <summary>When true, releases without a signature URL are rejected after download.</summary>
     public bool RequirePackageCmsSignature { get; set; }
+
+    /// <summary>When true, try delta download/apply before falling back to the full package.</summary>
+    public bool EnableDeltaUpdates { get; set; } = true;
+
+    /// <summary>Skip delta when delta size is at least this fraction of the full package (0–1).</summary>
+    public double DeltaMaxSizeRatio { get; set; } = 0.8;
 }

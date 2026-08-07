@@ -50,6 +50,50 @@ public static class DatabaseInitializer
                     ALTER TABLE ReleasePackages ADD SignaturePath nvarchar(260) NULL;
                 """,
             cancellationToken);
+
+        await EnsureColumnAsync(
+            dbContext,
+            "ReleasePackages",
+            "DeltaPath",
+            sqliteAlter: """ALTER TABLE "ReleasePackages" ADD COLUMN "DeltaPath" TEXT NULL;""",
+            sqlServerAlter: """
+                IF COL_LENGTH('ReleasePackages', 'DeltaPath') IS NULL
+                    ALTER TABLE ReleasePackages ADD DeltaPath nvarchar(260) NULL;
+                """,
+            cancellationToken);
+
+        await EnsureColumnAsync(
+            dbContext,
+            "ReleasePackages",
+            "DeltaHash",
+            sqliteAlter: """ALTER TABLE "ReleasePackages" ADD COLUMN "DeltaHash" TEXT NULL;""",
+            sqlServerAlter: """
+                IF COL_LENGTH('ReleasePackages', 'DeltaHash') IS NULL
+                    ALTER TABLE ReleasePackages ADD DeltaHash nvarchar(128) NULL;
+                """,
+            cancellationToken);
+
+        await EnsureColumnAsync(
+            dbContext,
+            "ReleasePackages",
+            "DeltaSize",
+            sqliteAlter: """ALTER TABLE "ReleasePackages" ADD COLUMN "DeltaSize" INTEGER NULL;""",
+            sqlServerAlter: """
+                IF COL_LENGTH('ReleasePackages', 'DeltaSize') IS NULL
+                    ALTER TABLE ReleasePackages ADD DeltaSize bigint NULL;
+                """,
+            cancellationToken);
+
+        await EnsureColumnAsync(
+            dbContext,
+            "ReleasePackages",
+            "DeltaBaseVersion",
+            sqliteAlter: """ALTER TABLE "ReleasePackages" ADD COLUMN "DeltaBaseVersion" TEXT NULL;""",
+            sqlServerAlter: """
+                IF COL_LENGTH('ReleasePackages', 'DeltaBaseVersion') IS NULL
+                    ALTER TABLE ReleasePackages ADD DeltaBaseVersion nvarchar(50) NULL;
+                """,
+            cancellationToken);
     }
 
     private static async Task EnsureColumnAsync(

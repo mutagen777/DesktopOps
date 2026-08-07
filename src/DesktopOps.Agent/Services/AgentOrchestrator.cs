@@ -1,3 +1,4 @@
+using System.IO;
 using DesktopOps.Agent.Resources;
 using DesktopOps.Diagnostics;
 using DesktopOps.Updates;
@@ -185,28 +186,57 @@ public sealed class AgentOrchestrator
                     continue;
                 }
 
+                string? basePackagePath = null;
+                var release = candidate.Program.LatestRelease;
+
                 if (candidate.Action == ProgramUpdateAction.Update)
                 {
                     progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressBackup"), (index + 0.2) / Math.Max(total, 1)));
                     _installService.BackupProgram(candidate.Program.Slug);
-                    _installService.RemoveProgram(candidate.Program.Slug);
+
+                    if (!string.IsNullOrWhiteSpace(candidate.InstalledVersion)
+                        && !string.IsNullOrWhiteSpace(release.DeltaUrl)
+                        && !_updateService.Options.RequirePackageCmsSignature
+                        && string.Equals(
+                            candidate.InstalledVersion,
+                            release.DeltaBaseVersion,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        basePackagePath = Path.Combine(
+                            _updateService.Options.CacheDirectory,
+                            $"{SanitizePathSegment(candidate.Program.Slug)}-{SanitizePathSegment(candidate.InstalledVersion)}-base.zip");
+                        if (!_installService.CreateInstallSnapshotZip(candidate.Program.Slug, basePackagePath))
+                        {
+                            basePackagePath = null;
+                        }
+                    }
                 }
 
                 progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressDownload"), (index + 0.4) / Math.Max(total, 1)));
-                var release = candidate.Program.LatestRelease;
                 await _updateService.ReportStatusAsync(
                     release.Id,
                     DeploymentStatus.Downloading,
                     "Download started.",
                     cancellationToken: cancellationToken);
 
-                var prepared = await _updateService.PrepareUpdateAsync(release, cancellationToken);
+                var prepared = await _updateService.PrepareUpdateAsync(
+                    release,
+                    basePackagePath,
+                    candidate.InstalledVersion,
+                    cancellationToken);
+
+                if (candidate.Action == ProgramUpdateAction.Update)
+                {
+                    _installService.RemoveProgram(candidate.Program.Slug);
+                }
+
                 progress?.Report(new UpdateProgress(index + 1, total, label, Loc.Get("ProgressInstall"), (index + 0.7) / Math.Max(total, 1)));
                 var ok = await _installService.InstallFromZipAsync(
                     candidate.Program,
                     prepared.PackagePath,
                     release.PackageHash,
-                    cancellationToken);
+                    cancellationToken,
+                    skipPackageHashVerification: prepared.VerifiedViaDeltaEntries);
 
                 if (!ok)
                 {
@@ -366,6 +396,16 @@ public sealed class AgentOrchestrator
             Action = ProgramUpdateAction.Update,
             InstalledVersion = localVersion.ToString()
         };
+    }
+
+    private static string SanitizePathSegment(string value)
+    {
+        foreach (var invalidChar in Path.GetInvalidFileNameChars())
+        {
+            value = value.Replace(invalidChar, '-');
+        }
+
+        return value;
     }
 
     private async Task PollLoopAsync(CancellationToken cancellationToken)

@@ -83,6 +83,13 @@
   <data name="CmsSignatureFailed" xml:space="preserve"><value>Package signature validation or signing failed.</value></data>
   <data name="ReleaseUploadedSigned" xml:space="preserve"><value>Release uploaded with CMS signature.</value></data>
   <data name="ReleaseUploadedUnsigned" xml:space="preserve"><value>Release uploaded (no CMS signature).</value></data>
+  <data name="Delta" xml:space="preserve"><value>Delta</value></data>
+  <data name="GenerateDelta" xml:space="preserve"><value>Generate delta</value></data>
+  <data name="DeltaGenerated" xml:space="preserve"><value>Delta generated from version {0}.</value></data>
+  <data name="DeltaSkipped" xml:space="preserve"><value>Delta was not created (packages identical or not smaller enough).</value></data>
+  <data name="DeltaNoPrevious" xml:space="preserve"><value>No older package version found to build a delta from.</value></data>
+  <data name="DeltaAlreadyPresent" xml:space="preserve"><value>This release already has a delta.</value></data>
+  <data name="ReleaseUploadedWithDelta" xml:space="preserve"><value>Release uploaded with delta from version {0}.</value></data>
   <data name="Yes" xml:space="preserve"><value>Yes</value></data>
   <data name="TimeUtc" xml:space="preserve"><value>Time (UTC)</value></data>
   <data name="User" xml:space="preserve"><value>User</value></data>
