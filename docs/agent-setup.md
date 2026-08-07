@@ -52,7 +52,9 @@ UI settings are stored in `%LocalAppData%\DesktopOps\agent-ui.json`:
 
 Self-update details: [Agent self-update](agent-self-update.md).
 
-UI language follows the Windows display language (English / German). See [Localization](localization.md).
+UI language follows the Windows display language (English / German / …). See [Localization](localization.md).
+
+Installer builds: [Agent installer (Velopack)](agent-installer.md).
 
 ## Tray menu
 

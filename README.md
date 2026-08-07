@@ -87,12 +87,18 @@ Runtime = DesktopOpsWpfBootstrapper.Initialize(this, options =>
 
 - [Architecture](docs/architecture.md)
 - [Admin authentication](docs/admin-auth.md)
+- [Production hardening](docs/production-hardening.md)
+- [Self-hosted deployment](docs/self-hosted.md)
+- [Package signing](docs/package-signing.md)
+- [Commercial support](docs/commercial-support.md)
+- [Legal notices (template)](docs/legal-notices.md)
 - [Localization](docs/localization.md)
 - [Directory group sync](docs/directory-sync.md)
 - [Server API](docs/server-api.md)
 - [Deployment model](docs/deployment-model.md)
 - [Client update flow](docs/update-feed.md)
 - [Agent setup](docs/agent-setup.md)
+- [Agent installer (Velopack)](docs/agent-installer.md)
 - [Agent self-update](docs/agent-self-update.md)
 - [Staged rollouts](docs/staged-rollouts.md)
 - [Support bundle](docs/support-bundle.md)
@@ -111,10 +117,12 @@ Included:
 Not included yet:
 
 - Scheduled / Entra ID (Graph) sync of end-user groups
-- Velopack / MSI installer channel
 - multi-tenant isolation
 - delta updates
-- signed packages
+- Authenticode / signed packages (SHA-256 hash verification is included)
+
+Agent installer packaging via Velopack is supported — see [Agent installer](docs/agent-installer.md).
+Production hardening checklist: [Production hardening](docs/production-hardening.md).
 
 Staged percentage rollouts are supported — see [Staged rollouts](docs/staged-rollouts.md).
 

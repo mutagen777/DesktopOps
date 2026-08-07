@@ -16,6 +16,7 @@ Optional shared API key for all `/api/*` routes:
 - Empty `ApiKey` → auth disabled (local demo)
 - Clients send `X-DesktopOps-Key: <value>` (or `Authorization: ApiKey <value>`)
 - `GET /` stays open and reports `apiKeyRequired`
+- `GET /health` and `GET /health/ready` stay open for monitoring (database + storage)
 
 Agent: `Agent:ApiKey` in `appsettings.json`. Embedded clients: `UpdateOptions.ApiKey`.
 

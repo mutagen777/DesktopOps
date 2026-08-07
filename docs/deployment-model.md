@@ -1,6 +1,7 @@
 # Deployment model
 
 DesktopOps targets single-tenant, self-hosted deployments inside a company network.
+See [Self-hosted deployment](self-hosted.md) for the sales/ops model.
 
 ## Roles
 
@@ -27,6 +28,8 @@ Groups are maintained inside DesktopOps for the MVP (no AD sync yet).
 - Packages: filesystem directory (`Storage:RootPath`)
 
 Keep Admin and Server on the same database and storage paths when running both locally.
+
+For customer / production deployments see [Production hardening](production-hardening.md).
 
 ## Sample demo path
 

@@ -106,6 +106,8 @@ else
 
 var app = builder.Build();
 
+ProductionGuards.EnsureAdminReady(app.Environment, security, connectionString);
+
 using (var scope = app.Services.CreateScope())
 {
     var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<DesktopOpsDbContext>>();

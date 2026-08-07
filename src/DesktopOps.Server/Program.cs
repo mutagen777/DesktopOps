@@ -50,7 +50,27 @@ builder.Services.AddDbContext<DesktopOpsDbContext>(options =>
     }
 });
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<DesktopOpsDbContext>("database")
+    .AddCheck("storage", () =>
+    {
+        try
+        {
+            Directory.CreateDirectory(storageOptions.RootPath);
+            var probe = Path.Combine(storageOptions.RootPath, ".health");
+            File.WriteAllText(probe, DateTimeOffset.UtcNow.ToString("O"));
+            File.Delete(probe);
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(storageOptions.RootPath);
+        }
+        catch (Exception ex)
+        {
+            return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Package storage not writable.", ex);
+        }
+    });
+
 var app = builder.Build();
+
+ProductionGuards.EnsureServerReady(app.Environment, apiKeyOptions, provider, connectionString);
 
 using (var scope = app.Services.CreateScope())
 {
@@ -61,6 +81,12 @@ using (var scope = app.Services.CreateScope())
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseMiddleware<ApiKeyMiddleware>();
+
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = static check => check.Name is "database" or "storage"
+});
 
 app.MapGet("/", (ApiKeyOptions security) => Results.Ok(new
 {

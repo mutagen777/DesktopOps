@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Windows;
 using DesktopOps.Agent.Services;
+using Velopack;
 
 namespace DesktopOps.Agent;
 
@@ -10,6 +11,9 @@ public partial class App : System.Windows.Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        // Must run before other startup work (handles install/update hooks).
+        VelopackApp.Build().Run();
+
         CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentUICulture;
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.CurrentUICulture;
 
