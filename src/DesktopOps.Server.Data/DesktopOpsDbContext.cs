@@ -23,6 +23,8 @@ public sealed class DesktopOpsDbContext : DbContext
 
     public DbSet<DeploymentEvent> DeploymentEvents => Set<DeploymentEvent>();
 
+    public DbSet<LicenseState> LicenseStates => Set<LicenseState>();
+
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
@@ -90,6 +92,12 @@ public sealed class DesktopOpsDbContext : DbContext
             entity.Property(static item => item.UserName).HasMaxLength(200);
             entity.Property(static item => item.MachineName).HasMaxLength(200);
             entity.Property(static item => item.WindowsSid).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<LicenseState>(entity =>
+        {
+            entity.HasKey(static item => item.Id);
+            entity.Property(static item => item.LicenseDocumentJson).HasColumnType("TEXT");
         });
     }
 }

@@ -290,6 +290,13 @@
     {
         statusMessage = null;
         await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var evaluation = await LicenseService.EvaluateAsync(dbContext);
+        if (evaluation.BlocksMutations)
+        {
+            statusMessage = L["LicenseBlockedAction"];
+            return;
+        }
+
         var release = await dbContext.ReleasePackages.FirstAsync(item => item.Id == releaseId);
         if (SigningOptions.RequireSignature && string.IsNullOrWhiteSpace(release.SignaturePath))
         {

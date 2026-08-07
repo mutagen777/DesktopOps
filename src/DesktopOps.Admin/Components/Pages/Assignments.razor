@@ -2,10 +2,25 @@
 @attribute [Authorize(Policy = "Manager")]
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+@using DesktopOps.Licensing
 
 <PageTitle>@L["Nav_Assignments"]</PageTitle>
 
 <p class="page-lead">@L["Lead_Assignments"]</p>
+
+@if (licenseBlocks)
+{
+    <div class="alert alert-danger py-2">@L["LicenseBlocksMutations"]</div>
+}
+else if (licenseOverage)
+{
+    <div class="alert alert-warning py-2">@L["LicenseSeatOverage"]</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="alert alert-info py-2">@statusMessage</div>
+}
 
 <div class="panel">
     <div class="panel-title">@L["CreateAssignment"]</div>
@@ -31,7 +46,7 @@
             </InputSelect>
         </div>
         <div class="col-md-2">
-            <button class="btn btn-primary w-100" @onclick="CreateAssignmentAsync">@L["Assign"]</button>
+            <button class="btn btn-primary w-100" disabled="@licenseBlocks" @onclick="CreateAssignmentAsync">@L["Assign"]</button>
         </div>
     </div>
 </div>
@@ -71,6 +86,9 @@
     private List<ManagedProgram> programs = [];
     private Guid? selectedGroupId;
     private Guid? selectedProgramId;
+    private bool licenseBlocks;
+    private bool licenseOverage;
+    private string? statusMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,12 +97,21 @@
 
     private async Task CreateAssignmentAsync()
     {
+        statusMessage = null;
         if (selectedProgramId is null || selectedGroupId is null)
         {
             return;
         }
 
         await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var evaluation = await LicenseService.EvaluateAsync(dbContext);
+        if (evaluation.BlocksMutations)
+        {
+            statusMessage = L["LicenseBlockedAction"];
+            licenseBlocks = true;
+            return;
+        }
+
         var exists = await dbContext.ProgramAssignments.AnyAsync(item =>
             item.ProgramId == selectedProgramId.Value && item.UserGroupId == selectedGroupId.Value);
         if (!exists)
@@ -103,6 +130,9 @@
     private async Task LoadAsync()
     {
         await using var dbContext = await DbFactory.CreateDbContextAsync();
+        var evaluation = await LicenseService.EvaluateAsync(dbContext);
+        licenseBlocks = evaluation.BlocksMutations;
+        licenseOverage = evaluation.IsOverSeatLimit;
         programs = await dbContext.Programs.OrderBy(static item => item.Name).ToListAsync();
         groups = await dbContext.UserGroups.OrderBy(static item => item.Name).ToListAsync();
         assignments = await dbContext.ProgramAssignments

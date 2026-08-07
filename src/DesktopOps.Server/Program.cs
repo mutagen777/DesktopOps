@@ -204,6 +204,14 @@ app.MapPost("/api/groups/{groupId:guid}/members", async (Guid groupId, AddGroupM
 
 app.MapPost("/api/assignments", async (CreateAssignmentRequest request, DesktopOpsDbContext dbContext) =>
 {
+    var license = await LicenseService.EvaluateAsync(dbContext);
+    if (license.BlocksMutations)
+    {
+        return Results.Json(
+            new { error = "LicenseRequired", message = license.ErrorMessage ?? "License invalid or expired." },
+            statusCode: StatusCodes.Status402PaymentRequired);
+    }
+
     var existing = await dbContext.ProgramAssignments.FirstOrDefaultAsync(item =>
         item.ProgramId == request.ProgramId && item.UserGroupId == request.UserGroupId);
     if (existing is not null)
@@ -380,6 +388,14 @@ app.MapPost("/api/releases/{releaseId:guid}/publish", async (
     DesktopOpsDbContext dbContext,
     PackageSigningOptions signing) =>
 {
+    var license = await LicenseService.EvaluateAsync(dbContext);
+    if (license.BlocksMutations)
+    {
+        return Results.Json(
+            new { error = "LicenseRequired", message = license.ErrorMessage ?? "License invalid or expired." },
+            statusCode: StatusCodes.Status402PaymentRequired);
+    }
+
     var release = await dbContext.ReleasePackages.FirstOrDefaultAsync(item => item.Id == releaseId);
     if (release is null)
     {

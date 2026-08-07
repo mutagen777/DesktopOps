@@ -6,6 +6,16 @@
 
 DesktopOps is licensed for **self-hosted, single-tenant** use at the Customer’s site (or Customer-controlled cloud).
 
+### SKUs (seats)
+
+| SKU | Seats | Notes |
+|-----|-------|--------|
+| Community | 3 | Free; soft overage warning |
+| Team 25 / 50 / 100 | Pack size | Signed offline license |
+| Enterprise | Custom / unlimited | + support hours |
+
+Seat = unique assigned person; unlimited programs per person. See [Licensing](licensing.md).
+
 Support covers:
 
 - Installation guidance for Server, Admin, and Agent (Velopack)

@@ -154,3 +154,14 @@ public enum DeploymentStatus
     Failed,
     Removed
 }
+
+/// <summary>Singleton row storing the installed signed license document (JSON).</summary>
+public sealed class LicenseState
+{
+    public Guid Id { get; set; } = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+    /// <summary>Full signed license JSON, or null for Community defaults.</summary>
+    public string? LicenseDocumentJson { get; set; }
+
+    public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
+}

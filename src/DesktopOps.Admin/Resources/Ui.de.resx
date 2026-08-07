@@ -109,4 +109,23 @@
   <data name="LoginRequired" xml:space="preserve"><value>Anmeldung erforderlich (Windows-Authentifizierung).</value></data>
   <data name="Forbidden" xml:space="preserve"><value>Keine Berechtigung für diese Seite.</value></data>
   <data name="ForbiddenHint" xml:space="preserve"><value>Für Programme und Releases wird die Developer-AD-Gruppe benötigt. Für Gruppen und Zuweisungen die Manager- oder Developer-Gruppe.</value></data>
+  <data name="Nav_License" xml:space="preserve"><value>Lizenz</value></data>
+  <data name="Lead_License" xml:space="preserve"><value>Community umfasst 3 kostenlose Seats. Team-/Enterprise-Lizenz als signierte Datei hochladen.</value></data>
+  <data name="LicenseStatus" xml:space="preserve"><value>Lizenzstatus</value></data>
+  <data name="LicenseTier" xml:space="preserve"><value>Stufe</value></data>
+  <data name="LicenseSeats" xml:space="preserve"><value>Seats genutzt</value></data>
+  <data name="LicenseCustomer" xml:space="preserve"><value>Kunde</value></data>
+  <data name="LicenseValidUntil" xml:space="preserve"><value>Gültig bis</value></data>
+  <data name="LicenseUnlimited" xml:space="preserve"><value>Unbegrenzt</value></data>
+  <data name="LicensePerpetual" xml:space="preserve"><value>Unbefristet</value></data>
+  <data name="LicenseCommunityHint" xml:space="preserve"><value>Ein Seat ist eine eindeutige Person in einer Gruppe mit mindestens einer Programmzuweisung. Programme pro Person sind unbegrenzt.</value></data>
+  <data name="LicenseUpload" xml:space="preserve"><value>Lizenzdatei installieren</value></data>
+  <data name="LicenseInstall" xml:space="preserve"><value>Installieren</value></data>
+  <data name="LicenseClear" xml:space="preserve"><value>Auf Community zurücksetzen</value></data>
+  <data name="LicenseInstalled" xml:space="preserve"><value>Lizenz installiert.</value></data>
+  <data name="LicenseCleared" xml:space="preserve"><value>Auf Community zurückgesetzt (3 kostenlose Seats).</value></data>
+  <data name="LicenseInstallFailed" xml:space="preserve"><value>Lizenzinstallation fehlgeschlagen: {0}</value></data>
+  <data name="LicenseSeatOverage" xml:space="preserve"><value>Seat-Limit überschritten. Die Nutzung bleibt möglich; für Produktion bitte Team- oder Enterprise-Lizenz.</value></data>
+  <data name="LicenseBlocksMutations" xml:space="preserve"><value>Lizenz ungültig oder abgelaufen. Neue Zuweisungen und Veröffentlichungen sind gesperrt, bis eine gültige Lizenz installiert ist.</value></data>
+  <data name="LicenseBlockedAction" xml:space="preserve"><value>Aktion durch Lizenzrichtlinie gesperrt.</value></data>
 </root>

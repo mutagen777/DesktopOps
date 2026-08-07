@@ -46,8 +46,9 @@ If you host:
 
 ## Checklist before first invoice
 
-- [ ] License model decided (MIT-as-is vs commercial EULA)
+- [ ] License model decided (MIT-as-is vs commercial EULA) — product seats: [Licensing](licensing.md)
 - [ ] Support tiers priced — [Commercial support](commercial-support.md)
+- [ ] Signing key pair replaced for production licenses (`LicensingPublicKeys` + private key offline)
 - [ ] DPA template ready if you touch personal data
 - [ ] Production hardening verified at customer — [Production hardening](production-hardening.md)
 - [ ] Signing process for Agent installer — [Package signing](package-signing.md)

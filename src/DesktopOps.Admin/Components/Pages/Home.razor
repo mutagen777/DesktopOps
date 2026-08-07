@@ -1,10 +1,35 @@
 ﻿@page "/"
 @attribute [Authorize(Policy = "Manager")]
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+@using DesktopOps.Licensing
 
 <PageTitle>@L["Nav_Overview"]</PageTitle>
 
 <p class="page-lead">@L["Lead_Overview"]</p>
+
+@if (licenseEvaluation is not null)
+{
+    @if (licenseEvaluation.BlocksMutations)
+    {
+        <div class="alert alert-danger py-2"><a href="license">@L["LicenseBlocksMutations"]</a></div>
+    }
+    else if (licenseEvaluation.IsOverSeatLimit)
+    {
+        <div class="alert alert-warning py-2"><a href="license">@L["LicenseSeatOverage"]</a></div>
+    }
+    else
+    {
+        <div class="panel dashboard-status">
+            <div class="panel-title">@L["Nav_License"]</div>
+            <p class="mb-0">
+                @licenseEvaluation.Tier:
+                @licenseEvaluation.UsedSeats /
+                @(licenseEvaluation.MaxSeats is null ? L["LicenseUnlimited"] : licenseEvaluation.MaxSeats.Value.ToString())
+                <a href="license" class="ms-2">@L["Nav_License"]</a>
+            </p>
+        </div>
+    }
+}
 
 @if (draftReleaseCount > 0 || stagedRolloutCount > 0)
 {
@@ -105,6 +130,7 @@
     private int programCount;
     private int publishedReleaseCount;
     private int stagedRolloutCount;
+    private LicenseEvaluation? licenseEvaluation;
     private List<ManagedProgram> latestPrograms = [];
     private List<UserGroup> latestGroups = [];
     private List<ReleasePackage> latestReleases = [];
@@ -112,6 +138,7 @@
     protected override async Task OnInitializedAsync()
     {
         await using var dbContext = await DbFactory.CreateDbContextAsync();
+        licenseEvaluation = await LicenseService.EvaluateAsync(dbContext);
         programCount = await dbContext.Programs.CountAsync();
         groupCount = await dbContext.UserGroups.CountAsync();
         assignmentCount = await dbContext.ProgramAssignments.CountAsync();

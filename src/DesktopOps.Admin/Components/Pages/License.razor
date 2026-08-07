@@ -1,0 +1,118 @@
+@page "/license"
+@attribute [Authorize(Policy = "Developer")]
+@rendermode InteractiveServer
+@inject IDbContextFactory<DesktopOpsDbContext> DbFactory
+@using DesktopOps.Licensing
+
+<PageTitle>@L["Nav_License"]</PageTitle>
+
+<p class="page-lead">@L["Lead_License"]</p>
+
+@if (evaluation is not null)
+{
+    @if (evaluation.BlocksMutations)
+    {
+        <div class="alert alert-danger py-2">@L["LicenseBlocksMutations"] @(evaluation.ErrorMessage)</div>
+    }
+    else if (evaluation.IsOverSeatLimit)
+    {
+        <div class="alert alert-warning py-2">@L["LicenseSeatOverage"]</div>
+    }
+
+    <div class="panel">
+        <div class="panel-title">@L["LicenseStatus"]</div>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="form-label">@L["LicenseTier"]</div>
+                <div class="fw-semibold">@evaluation.Tier</div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-label">@L["LicenseSeats"]</div>
+                <div class="fw-semibold">
+                    @evaluation.UsedSeats
+                    /
+                    @(evaluation.MaxSeats is null ? L["LicenseUnlimited"] : evaluation.MaxSeats.Value.ToString())
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-label">@L["LicenseCustomer"]</div>
+                <div>@(string.IsNullOrWhiteSpace(evaluation.Customer) ? "—" : evaluation.Customer)</div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-label">@L["LicenseValidUntil"]</div>
+                <div>@(evaluation.ValidUntilUtc is null ? L["LicensePerpetual"] : evaluation.ValidUntilUtc.Value.ToString("u"))</div>
+            </div>
+        </div>
+        <p class="mt-3 mb-0 text-muted small">@L["LicenseCommunityHint"]</p>
+    </div>
+}
+
+<div class="panel">
+    <div class="panel-title">@L["LicenseUpload"]</div>
+    <InputFile OnChange="OnLicenseSelected" accept=".json,.lic,application/json" />
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="alert alert-info py-2 mt-3 mb-0">@statusMessage</div>
+    }
+    <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-primary" disabled="@(licenseFile is null)" @onclick="InstallAsync">@L["LicenseInstall"]</button>
+        <button class="btn btn-outline-secondary" @onclick="ClearAsync">@L["LicenseClear"]</button>
+    </div>
+</div>
+
+@code {
+    private LicenseEvaluation? evaluation;
+    private IBrowserFile? licenseFile;
+    private string? statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private void OnLicenseSelected(InputFileChangeEventArgs args)
+    {
+        licenseFile = args.File;
+        statusMessage = null;
+    }
+
+    private async Task InstallAsync()
+    {
+        statusMessage = null;
+        if (licenseFile is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var stream = licenseFile.OpenReadStream(maxAllowedSize: 256 * 1024);
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+            await using var db = await DbFactory.CreateDbContextAsync();
+            await LicenseService.InstallAsync(db, json);
+            licenseFile = null;
+            statusMessage = L["LicenseInstalled"];
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = string.Format(L["LicenseInstallFailed"], ex.Message);
+        }
+    }
+
+    private async Task ClearAsync()
+    {
+        statusMessage = null;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        await LicenseService.ClearAsync(db);
+        statusMessage = L["LicenseCleared"];
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        evaluation = await LicenseService.EvaluateAsync(db);
+    }
+}

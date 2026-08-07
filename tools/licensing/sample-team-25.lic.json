@@ -1,0 +1,10 @@
+{
+  "payload": {
+    "licenseId": "92e92193-cb05-4a00-a146-be5327868404",
+    "tier": "team",
+    "maxSeats": 25,
+    "customer": "Demo Corp",
+    "validUntilUtc": "2027-12-31T00:00:00+00:00"
+  },
+  "signature": "opmTgUV0CP8MjO4RTNfp6h1We69mhdOEWteY3kSvjyYVVn6taaO11LCojDI6AHU9xTi6TsFGTuOuaqrH7PWvbi0qWR9ZQSOm\u002B3Hs675pL8\u002BHv4avyB5ym7w/5e8Ae\u002BSHlC6u5062zz16AuqcKdkMeX9Ysd2Nl1TijifE/S89siRpopJzH/1RPYxlkduDONVM7tbPV8V71sOl//WQaLWOMTJirKCitc/ttfnn6O22iSDR3Qjta1pwW2YCc5xM535tYEGRUdMO6D3eD9\u002BBZ4Pe\u002BA9UrJmTjpOSGc5wUZTiBLPEWZ/UNmgwIdOKKdWG4B7NzqAZlOwUTW/l6jhEM\u002B5tnw=="
+}

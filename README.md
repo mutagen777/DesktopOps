@@ -91,6 +91,7 @@ Runtime = DesktopOpsWpfBootstrapper.Initialize(this, options =>
 - [Self-hosted deployment](docs/self-hosted.md)
 - [Package signing](docs/package-signing.md)
 - [Delta updates](docs/delta-updates.md)
+- [Licensing (seats)](docs/licensing.md)
 - [Commercial support](docs/commercial-support.md)
 - [Legal notices (template)](docs/legal-notices.md)
 - [Localization](docs/localization.md)

@@ -94,6 +94,44 @@ public static class DatabaseInitializer
                     ALTER TABLE ReleasePackages ADD DeltaBaseVersion nvarchar(50) NULL;
                 """,
             cancellationToken);
+
+        await EnsureLicenseStateTableAsync(dbContext, cancellationToken);
+    }
+
+    private static async Task EnsureLicenseStateTableAsync(
+        DesktopOpsDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var provider = dbContext.Database.ProviderName ?? string.Empty;
+        if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            await dbContext.Database.ExecuteSqlRawAsync(
+                """
+                CREATE TABLE IF NOT EXISTS "LicenseStates" (
+                    "Id" TEXT NOT NULL CONSTRAINT "PK_LicenseStates" PRIMARY KEY,
+                    "LicenseDocumentJson" TEXT NULL,
+                    "UpdatedAtUtc" TEXT NOT NULL
+                );
+                """,
+                cancellationToken);
+            return;
+        }
+
+        if (provider.Contains("SqlServer", StringComparison.OrdinalIgnoreCase))
+        {
+            await dbContext.Database.ExecuteSqlRawAsync(
+                """
+                IF OBJECT_ID(N'LicenseStates', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE LicenseStates (
+                        Id uniqueidentifier NOT NULL CONSTRAINT PK_LicenseStates PRIMARY KEY,
+                        LicenseDocumentJson nvarchar(max) NULL,
+                        UpdatedAtUtc datetimeoffset NOT NULL
+                    );
+                END
+                """,
+                cancellationToken);
+        }
     }
 
     private static async Task EnsureColumnAsync(

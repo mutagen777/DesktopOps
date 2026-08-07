@@ -12,3 +12,5 @@ artifacts/
 storage/
 .demo/
 appsettings.Development.json
+tools/licensing/*-private.pem
+tools/licensing/dev-private.pem

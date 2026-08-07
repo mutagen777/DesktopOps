@@ -112,6 +112,11 @@
                 return L["Nav_Rollouts"];
             }
 
+            if (relative.StartsWith("license"))
+            {
+                return L["Nav_License"];
+            }
+
             return "DesktopOps";
         }
     }

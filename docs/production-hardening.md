@@ -25,6 +25,7 @@ Prefer secrets via environment variables (do not commit real keys):
 | Entra Graph sync (optional) | `DirectorySync__Entra__TenantId`, `DirectorySync__Entra__ClientId`, `DirectorySync__Entra__ClientSecret` |
 | Package CMS signing (optional) | `Signing__CertificateThumbprint`, Agent `Agent__TrustedCmsThumbprints` |
 | Delta updates (optional) | Agent `Agent__EnableDeltaUpdates`, `Agent__DeltaMaxSizeRatio` |
+| Seat license (Admin upload) | Signed license JSON in DB — see [Licensing](licensing.md) |
 
 In **Production**, the apps refuse to start when:
 
