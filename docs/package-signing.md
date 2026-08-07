@@ -6,23 +6,30 @@ Every release ZIP is hashed (**SHA-256**) on upload. Clients verify the hash bef
 
 That protects against bit-flip / tampering **after** the package is stored, assuming the Server and API key are trusted.
 
-## Authenticode (recommended for sale)
+## Authenticode (Agent installer)
 
-Sign customer-facing binaries before distribution:
+Sign the Velopack build with your code-signing certificate:
+
+```powershell
+# Certificate must be in the Windows cert store (CurrentUser or LocalMachine\My)
+.\tools\pack-agent.ps1 -Version 0.3.1 -CertThumbprint "YOURTHUMBPRINT"
+
+# Or sign arbitrary files after the fact
+.\tools\sign-file.ps1 -CertThumbprint "YOURTHUMBPRINT" -Path .\artifacts\agent-releases\Setup.exe
+```
+
+What `-CertThumbprint` does in `pack-agent.ps1`:
+
+1. Signs `*.exe` in the publish folder before `vpk pack`
+2. Passes Velopack `--signTemplate` so pack-produced binaries are signed
+3. Re-signs `Setup.exe` / agent EXEs in the output folder
+
+Requirements: Windows SDK **signtool**, certificate with private key, outbound access to the timestamp URL (default DigiCert).
 
 | Artifact | Sign with |
 |----------|-----------|
-| `DesktopOps.Agent.exe` / Velopack `Setup.exe` | Authenticode code-signing certificate |
-| Optional: published program EXEs inside ZIPs | Same org certificate |
-
-Example (after `pack-agent.ps1`):
-
-```powershell
-signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /a `
-  .\artifacts\agent-releases\Setup.exe
-```
-
-Velopack also supports `--signTemplate` during `vpk pack` — see [Agent installer](agent-installer.md).
+| `DesktopOps.Agent.exe` / Velopack `Setup.exe` | Authenticode (`pack-agent.ps1` / `sign-file.ps1`) |
+| Optional: published program EXEs inside ZIPs | Same org certificate via `sign-file.ps1` |
 
 ## Future: signed release packages
 
@@ -32,23 +39,8 @@ Not implemented yet. A later hardening step can add:
 2. Admin upload of signature or automatic signing on Server with a HSM/cert
 3. Agent verification of signature **in addition to** SHA-256
 
-Until then: treat Server authenticity (HTTPS + API key + locked-down Admin AD) as the trust root.
+Until then: treat Server authenticity (HTTPS + API key + locked-down Admin AD) as the trust root for program ZIPs.
 
 ## Support / SLA story (product)
 
-Ship a short commercial appendix (edit for your company):
-
-| Tier | Response | Coverage |
-|------|----------|----------|
-| Standard | Next business day | Self-hosted install, Agent updates, Admin usage |
-| Priority | Same business day | + production incidents, health probes |
-| Critical | 4h (business hours) | + emergency hotfix guidance |
-
-Include:
-
-- Supported OS: Windows 10/11 (Agent), Windows Server 2019+ (Server/Admin)
-- Supported DB: SQL Server (production), SQLite (lab only)
-- How to open a ticket + attach Agent **Diagnose exportieren** ZIP
-- Explicit exclusions: customer network, AD misconfiguration, unsigned third-party payloads
-
-Template wording lives in [Commercial support](commercial-support.md).
+See [Commercial support](commercial-support.md).

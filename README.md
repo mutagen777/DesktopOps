@@ -119,10 +119,11 @@ Not included yet:
 - Entra ID (Graph) sync of end-user groups
 - multi-tenant isolation
 - delta updates
-- Authenticode / signed packages (SHA-256 hash verification is included)
+- Detached CMS signatures on program ZIP packages (Authenticode for the Agent installer is supported)
 
 Scheduled AD/Windows group sync is supported — see [Directory group sync](docs/directory-sync.md).
 Agent installer packaging via Velopack is supported — see [Agent installer](docs/agent-installer.md).
+Authenticode for Agent builds: [Package signing](docs/package-signing.md).
 Production hardening checklist: [Production hardening](docs/production-hardening.md).
 
 Staged percentage rollouts are supported — see [Staged rollouts](docs/staged-rollouts.md).

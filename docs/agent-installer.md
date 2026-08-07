@@ -11,6 +11,9 @@ Prerequisites: .NET 8 SDK, Windows.
 dotnet tool install -g vpk
 
 .\tools\pack-agent.ps1 -Version 0.3.0
+
+# with Authenticode (certificate thumbprint from certmgr)
+.\tools\pack-agent.ps1 -Version 0.3.0 -CertThumbprint "YOURTHUMBPRINT"
 ```
 
 Output (default):
@@ -48,4 +51,4 @@ Details for the ZIP path: [Agent self-update](agent-self-update.md).
 ## Notes
 
 - Pack script targets `win-x64` + framework-dependent (`net8.0-x64-desktop` prerequisite).
-- Code-sign `Setup.exe` / packages with your Authenticode certificate before customer distribution (see packaging / signing docs).
+- Code-sign with `-CertThumbprint` on `pack-agent.ps1`, or see [Package signing](package-signing.md).
