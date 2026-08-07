@@ -17,6 +17,10 @@ builder.Services.AddSingleton(new StorageOptions
     RootPath = Path.GetFullPath(storageRoot ?? Path.Combine(AppContext.BaseDirectory, "storage"))
 });
 builder.Services.AddSingleton<PackageStorageService>();
+builder.Services.Configure<PackageSigningOptions>(
+    builder.Configuration.GetSection(PackageSigningOptions.SectionName));
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PackageSigningOptions>>().Value);
 
 var provider = builder.Configuration["Database:Provider"] ?? "Sqlite";
 builder.Services.AddDbContextFactory<DesktopOpsDbContext>(options =>

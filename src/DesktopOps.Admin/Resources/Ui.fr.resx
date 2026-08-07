@@ -77,6 +77,13 @@
   <data name="Rollout" xml:space="preserve"><value>Déploiement</value></data>
   <data name="Publish" xml:space="preserve"><value>Publier</value></data>
   <data name="Sha256" xml:space="preserve"><value>SHA-256</value></data>
+  <data name="CmsSignatureOptional" xml:space="preserve"><value>Signature CMS (.p7s, facultatif)</value></data>
+  <data name="CmsSigned" xml:space="preserve"><value>CMS</value></data>
+  <data name="CmsSignatureRequired" xml:space="preserve"><value>Une signature CMS du package est requise.</value></data>
+  <data name="CmsSignatureFailed" xml:space="preserve"><value>Échec de la validation ou de la signature du package.</value></data>
+  <data name="ReleaseUploadedSigned" xml:space="preserve"><value>Release téléversé avec signature CMS.</value></data>
+  <data name="ReleaseUploadedUnsigned" xml:space="preserve"><value>Release téléversé (sans signature CMS).</value></data>
+  <data name="Yes" xml:space="preserve"><value>Oui</value></data>
   <data name="TimeUtc" xml:space="preserve"><value>Heure (UTC)</value></data>
   <data name="User" xml:space="preserve"><value>Utilisateur</value></data>
   <data name="Machine" xml:space="preserve"><value>Machine</value></data>

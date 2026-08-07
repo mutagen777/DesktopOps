@@ -58,11 +58,97 @@ public sealed class PackageStorageService
             size);
     }
 
+    /// <summary>Relative detached signature path for a package (<c>{packagePath}.p7s</c>).</summary>
+    public static string GetDetachedSignatureRelativePath(string packageRelativePath)
+    {
+        return packageRelativePath + ".p7s";
+    }
+
+    /// <summary>Writes an uploaded detached CMS signature next to the package.</summary>
+    public async Task<string> SaveDetachedSignatureAsync(
+        string packageRelativePath,
+        Stream signatureStream,
+        CancellationToken cancellationToken = default)
+    {
+        var relativeSignaturePath = GetDetachedSignatureRelativePath(packageRelativePath);
+        var absolutePath = GetAbsolutePath(relativeSignaturePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(absolutePath)!);
+
+        await using var output = File.Create(absolutePath);
+        await signatureStream.CopyToAsync(output, cancellationToken);
+        await output.FlushAsync(cancellationToken);
+        return relativeSignaturePath;
+    }
+
+    /// <summary>
+    /// Saves and verifies a detached CMS signature over the package.
+    /// When <paramref name="requiredSignerThumbprint"/> is set, the signer must match it.
+    /// </summary>
+    public async Task<string> SaveAndVerifyDetachedSignatureAsync(
+        string packageRelativePath,
+        Stream signatureStream,
+        string? requiredSignerThumbprint = null,
+        CancellationToken cancellationToken = default)
+    {
+        using var buffer = new MemoryStream();
+        await signatureStream.CopyToAsync(buffer, cancellationToken);
+        var signatureBytes = buffer.ToArray();
+        if (signatureBytes.Length == 0)
+        {
+            throw new InvalidOperationException("Package signature is empty.");
+        }
+
+        var packageAbsolutePath = GetAbsolutePath(packageRelativePath);
+        IReadOnlyCollection<string>? trusted = null;
+        if (!string.IsNullOrWhiteSpace(requiredSignerThumbprint))
+        {
+            trusted = [PackageCmsSigner.NormalizeThumbprint(requiredSignerThumbprint)];
+        }
+
+        PackageCmsVerifier.VerifyDetachedSignature(packageAbsolutePath, signatureBytes, trusted);
+
+        var relativeSignaturePath = GetDetachedSignatureRelativePath(packageRelativePath);
+        var absoluteSignaturePath = GetAbsolutePath(relativeSignaturePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(absoluteSignaturePath)!);
+        await File.WriteAllBytesAsync(absoluteSignaturePath, signatureBytes, cancellationToken);
+        return relativeSignaturePath;
+    }
+
+    /// <summary>Deletes the package and its detached signature if present (best-effort).</summary>
+    public void TryDeletePackageArtifacts(string packageRelativePath)
+    {
+        TryDeleteFile(GetAbsolutePath(packageRelativePath));
+        TryDeleteFile(GetAbsolutePath(GetDetachedSignatureRelativePath(packageRelativePath)));
+    }
+
+    /// <summary>Signs the package on disk and returns the relative <c>.p7s</c> path.</summary>
+    public string SignPackage(string packageRelativePath, string certificateThumbprint)
+    {
+        var absolutePackagePath = GetAbsolutePath(packageRelativePath);
+        PackageCmsSigner.SignPackageFile(absolutePackagePath, certificateThumbprint);
+        return GetDetachedSignatureRelativePath(packageRelativePath);
+    }
+
     public static string ComputeFileHash(string absolutePath)
     {
         using var stream = File.OpenRead(absolutePath);
         var hash = SHA256.HashData(stream);
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static void TryDeleteFile(string absolutePath)
+    {
+        try
+        {
+            if (File.Exists(absolutePath))
+            {
+                File.Delete(absolutePath);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup of orphaned upload artifacts.
+        }
     }
 
     private static string Sanitize(string value)

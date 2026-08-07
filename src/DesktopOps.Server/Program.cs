@@ -29,6 +29,10 @@ var provider = builder.Configuration["Database:Provider"] ?? "Sqlite";
 
 builder.Services.AddSingleton(storageOptions);
 builder.Services.AddSingleton<PackageStorageService>();
+builder.Services.Configure<PackageSigningOptions>(
+    builder.Configuration.GetSection(PackageSigningOptions.SectionName));
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PackageSigningOptions>>().Value);
 
 var apiKeyOptions = builder.Configuration.GetSection(ApiKeyOptions.SectionName).Get<ApiKeyOptions>()
     ?? new ApiKeyOptions();
@@ -245,7 +249,12 @@ app.MapGet("/api/releases", async (DesktopOpsDbContext dbContext) =>
         }));
 });
 
-app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbContext, PackageStorageService storage, CancellationToken cancellationToken) =>
+app.MapPost("/api/releases", async (
+    HttpRequest request,
+    DesktopOpsDbContext dbContext,
+    PackageStorageService storage,
+    PackageSigningOptions signing,
+    CancellationToken cancellationToken) =>
 {
     var form = await request.ReadFormAsync(cancellationToken);
 
@@ -280,6 +289,35 @@ app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbC
         packageStream,
         cancellationToken);
 
+    string? signaturePath = null;
+    try
+    {
+        var signatureFile = form.Files["signature"];
+        if (signatureFile is not null)
+        {
+            await using var signatureStream = signatureFile.OpenReadStream();
+            signaturePath = await storage.SaveAndVerifyDetachedSignatureAsync(
+                stored.RelativePath,
+                signatureStream,
+                signing.IsConfigured ? signing.CertificateThumbprint : null,
+                cancellationToken);
+        }
+        else if (signing.IsConfigured)
+        {
+            signaturePath = storage.SignPackage(stored.RelativePath, signing.CertificateThumbprint!);
+        }
+        else if (signing.RequireSignature)
+        {
+            storage.TryDeletePackageArtifacts(stored.RelativePath);
+            return Results.BadRequest("Package signature is required (upload signature or configure Signing:CertificateThumbprint).");
+        }
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+        storage.TryDeletePackageArtifacts(stored.RelativePath);
+        return Results.BadRequest($"Package signature failed: {ex.Message}");
+    }
+
     var rolloutPercent = 100;
     if (int.TryParse(form["rolloutPercent"], out var parsedRollout))
     {
@@ -294,6 +332,7 @@ app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbC
         PackagePath = stored.RelativePath,
         PackageHash = stored.Sha256Hash,
         PackageSize = stored.SizeBytes,
+        SignaturePath = signaturePath,
         ReleaseNotes = form["releaseNotes"].ToString(),
         IsMandatory = bool.TryParse(form["isMandatory"], out var isMandatory) && isMandatory,
         RolloutPercent = rolloutPercent
@@ -309,6 +348,7 @@ app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbC
         release.OriginalFileName,
         release.PackageHash,
         release.PackageSize,
+        release.SignaturePath,
         release.ReleaseNotes,
         release.IsMandatory,
         release.RolloutPercent,
@@ -317,12 +357,21 @@ app.MapPost("/api/releases", async (HttpRequest request, DesktopOpsDbContext dbC
     });
 });
 
-app.MapPost("/api/releases/{releaseId:guid}/publish", async (Guid releaseId, PublishReleaseRequest? request, DesktopOpsDbContext dbContext) =>
+app.MapPost("/api/releases/{releaseId:guid}/publish", async (
+    Guid releaseId,
+    PublishReleaseRequest? request,
+    DesktopOpsDbContext dbContext,
+    PackageSigningOptions signing) =>
 {
     var release = await dbContext.ReleasePackages.FirstOrDefaultAsync(item => item.Id == releaseId);
     if (release is null)
     {
         return Results.NotFound();
+    }
+
+    if (signing.RequireSignature && string.IsNullOrWhiteSpace(release.SignaturePath))
+    {
+        return Results.BadRequest("Package signature is required before publish.");
     }
 
     if (request?.RolloutPercent is int percent)
@@ -485,7 +534,10 @@ app.MapGet("/api/clients/{clientId:guid}/assignments", async (Guid clientId, Des
                     latest.IsMandatory,
                     latest.PackageHash,
                     latest.PackageSize,
-                    $"/api/packages/{latest.Id}?clientId={client.Id}"));
+                    $"/api/packages/{latest.Id}?clientId={client.Id}",
+                    string.IsNullOrWhiteSpace(latest.SignaturePath)
+                        ? null
+                        : $"/api/packages/{latest.Id}/signature?clientId={client.Id}"));
     }).ToList();
 
     return Results.Ok(assignments);
@@ -532,7 +584,10 @@ app.MapGet("/api/clients/{clientId:guid}/updates", async (Guid clientId, string 
             release.PackageHash,
             release.PackageSize,
             release.RolloutPercent,
-            packageUrl = $"/api/packages/{release.Id}?clientId={clientId}"
+            packageUrl = $"/api/packages/{release.Id}?clientId={clientId}",
+            signatureUrl = string.IsNullOrWhiteSpace(release.SignaturePath)
+                ? null
+                : $"/api/packages/{release.Id}/signature?clientId={clientId}"
         })
         .OrderByDescending(static release => ParseVersion(release.Version))
         .ToList();
@@ -613,6 +668,54 @@ app.MapGet("/api/packages/{releaseId:guid}", async (
     }
 
     return Results.File(absolutePath, "application/octet-stream", release.OriginalFileName);
+});
+
+app.MapGet("/api/packages/{releaseId:guid}/signature", async (
+    Guid releaseId,
+    Guid? clientId,
+    HttpContext httpContext,
+    DesktopOpsDbContext dbContext,
+    PackageStorageService storage) =>
+{
+    var release = await dbContext.ReleasePackages
+        .FirstOrDefaultAsync(item => item.Id == releaseId);
+    if (release is null || string.IsNullOrWhiteSpace(release.SignaturePath))
+    {
+        return Results.NotFound();
+    }
+
+    var role = httpContext.Items[ApiKeyOptions.RoleItemKey] as string;
+    if (string.Equals(role, ApiKeyOptions.RoleAgent, StringComparison.Ordinal))
+    {
+        if (clientId is null)
+        {
+            return Results.BadRequest(new { error = "clientId query parameter is required for agent downloads." });
+        }
+
+        var client = await dbContext.ClientRegistrations.FirstOrDefaultAsync(item => item.Id == clientId.Value);
+        if (client is null)
+        {
+            return Results.NotFound();
+        }
+
+        var assigned = await GetAssignedProgramsQuery(dbContext, client.UserName, client.WindowsSid)
+            .AnyAsync(program => program.Id == release.ProgramId);
+        if (!assigned)
+        {
+            return Results.Json(
+                new { error = "Forbidden", message = "Release is not assigned to this client." },
+                statusCode: StatusCodes.Status403Forbidden);
+        }
+    }
+
+    var absolutePath = storage.GetAbsolutePath(release.SignaturePath);
+    if (!File.Exists(absolutePath))
+    {
+        return Results.NotFound();
+    }
+
+    var downloadName = Path.GetFileName(release.SignaturePath);
+    return Results.File(absolutePath, "application/pkcs7-signature", downloadName);
 });
 
 app.Run();
@@ -696,4 +799,5 @@ internal sealed record AssignedReleaseDto(
     bool IsMandatory,
     string PackageHash,
     long PackageSize,
-    string PackageUrl);
+    string PackageUrl,
+    string? SignatureUrl);

@@ -39,6 +39,17 @@ public static class DatabaseInitializer
                     ALTER TABLE ReleasePackages ADD RolloutPercent int NOT NULL CONSTRAINT DF_ReleasePackages_RolloutPercent DEFAULT 100;
                 """,
             cancellationToken);
+
+        await EnsureColumnAsync(
+            dbContext,
+            "ReleasePackages",
+            "SignaturePath",
+            sqliteAlter: """ALTER TABLE "ReleasePackages" ADD COLUMN "SignaturePath" TEXT NULL;""",
+            sqlServerAlter: """
+                IF COL_LENGTH('ReleasePackages', 'SignaturePath') IS NULL
+                    ALTER TABLE ReleasePackages ADD SignaturePath nvarchar(260) NULL;
+                """,
+            cancellationToken);
     }
 
     private static async Task EnsureColumnAsync(

@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 @inject PackageStorageService PackageStorage
+@inject PackageSigningOptions SigningOptions
 
 <PageTitle>@L["Nav_Releases"]</PageTitle>
 
@@ -30,6 +31,10 @@
             <InputFile OnChange="OnFileSelected" />
         </div>
         <div class="col-md-3">
+            <label class="form-label">@L["CmsSignatureOptional"]</label>
+            <InputFile OnChange="OnSignatureSelected" accept=".p7s,.sig" />
+        </div>
+        <div class="col-md-3">
             <label class="form-label">@L["ReleaseNotes"]</label>
             <InputText class="form-control" @bind-Value="releaseNotes" />
         </div>
@@ -44,6 +49,10 @@
             <span>@L["MandatoryUpdate"]</span>
         </label>
     </div>
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="alert alert-info py-2">@statusMessage</div>
+    }
     <button class="btn btn-primary" @onclick="CreateReleaseAsync">@L["Upload"]</button>
 </div>
 
@@ -54,6 +63,7 @@
                 <th>@L["Program"]</th>
                 <th>@L["Version"]</th>
                 <th>@L["Sha256"]</th>
+                <th>@L["CmsSigned"]</th>
                 <th>@L["Size"]</th>
                 <th>@L["Rollout"]</th>
                 <th>@L["Status"]</th>
@@ -64,7 +74,7 @@
             @if (releases.Count == 0)
             {
                 <tr>
-                    <td colspan="7" class="text-muted">@L["NoReleases"]</td>
+                    <td colspan="8" class="text-muted">@L["NoReleases"]</td>
                 </tr>
             }
             else
@@ -75,6 +85,7 @@
                         <td>@release.Program?.Name</td>
                         <td>@release.Version</td>
                         <td class="hash-cell">@(string.IsNullOrEmpty(release.PackageHash) ? "—" : release.PackageHash[..Math.Min(12, release.PackageHash.Length)] + "…")</td>
+                        <td>@(string.IsNullOrWhiteSpace(release.SignaturePath) ? "—" : L["Yes"])</td>
                         <td>@FormatSize(release.PackageSize)</td>
                         <td>
                             <div class="d-flex gap-1 align-items-center">
@@ -116,9 +127,11 @@
 @code {
     private readonly Dictionary<Guid, int> rolloutEdits = [];
     private IBrowserFile? packageFile;
+    private IBrowserFile? signatureFile;
     private List<ManagedProgram> programs = [];
     private List<ReleasePackage> releases = [];
     private string? releaseNotes;
+    private string? statusMessage;
     private Guid? selectedProgramId;
     private bool isMandatory;
     private int rolloutPercent = 100;
@@ -134,8 +147,14 @@
         packageFile = args.File;
     }
 
+    private void OnSignatureSelected(InputFileChangeEventArgs args)
+    {
+        signatureFile = args.File;
+    }
+
     private async Task CreateReleaseAsync()
     {
+        statusMessage = null;
         if (selectedProgramId is null || packageFile is null || string.IsNullOrWhiteSpace(version))
         {
             return;
@@ -147,6 +166,35 @@
         await using var stream = packageFile.OpenReadStream(maxAllowedSize: 200 * 1024 * 1024);
         var stored = await PackageStorage.SavePackageAsync(program.Slug, version, packageFile.Name, stream);
 
+        string? signaturePath = null;
+        try
+        {
+            if (signatureFile is not null)
+            {
+                await using var signatureStream = signatureFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+                signaturePath = await PackageStorage.SaveAndVerifyDetachedSignatureAsync(
+                    stored.RelativePath,
+                    signatureStream,
+                    SigningOptions.IsConfigured ? SigningOptions.CertificateThumbprint : null);
+            }
+            else if (SigningOptions.IsConfigured)
+            {
+                signaturePath = PackageStorage.SignPackage(stored.RelativePath, SigningOptions.CertificateThumbprint!);
+            }
+            else if (SigningOptions.RequireSignature)
+            {
+                PackageStorage.TryDeletePackageArtifacts(stored.RelativePath);
+                statusMessage = L["CmsSignatureRequired"];
+                return;
+            }
+        }
+        catch (Exception)
+        {
+            PackageStorage.TryDeletePackageArtifacts(stored.RelativePath);
+            statusMessage = L["CmsSignatureFailed"];
+            return;
+        }
+
         dbContext.ReleasePackages.Add(new ReleasePackage
         {
             ProgramId = program.Id,
@@ -155,6 +203,7 @@
             PackagePath = stored.RelativePath,
             PackageHash = stored.Sha256Hash,
             PackageSize = stored.SizeBytes,
+            SignaturePath = signaturePath,
             ReleaseNotes = releaseNotes?.Trim(),
             IsMandatory = isMandatory,
             RolloutPercent = Math.Clamp(rolloutPercent, 0, 100)
@@ -162,17 +211,28 @@
 
         await dbContext.SaveChangesAsync();
         packageFile = null;
+        signatureFile = null;
         releaseNotes = string.Empty;
         version = string.Empty;
         isMandatory = false;
         rolloutPercent = 100;
+        statusMessage = string.IsNullOrWhiteSpace(signaturePath)
+            ? L["ReleaseUploadedUnsigned"]
+            : L["ReleaseUploadedSigned"];
         await LoadAsync();
     }
 
     private async Task PublishAsync(Guid releaseId)
     {
+        statusMessage = null;
         await using var dbContext = await DbFactory.CreateDbContextAsync();
         var release = await dbContext.ReleasePackages.FirstAsync(item => item.Id == releaseId);
+        if (SigningOptions.RequireSignature && string.IsNullOrWhiteSpace(release.SignaturePath))
+        {
+            statusMessage = L["CmsSignatureRequired"];
+            return;
+        }
+
         if (rolloutEdits.TryGetValue(releaseId, out var percent))
         {
             release.RolloutPercent = Math.Clamp(percent, 0, 100);

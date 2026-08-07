@@ -77,6 +77,13 @@
   <data name="Rollout" xml:space="preserve"><value>Развёртывание</value></data>
   <data name="Publish" xml:space="preserve"><value>Опубликовать</value></data>
   <data name="Sha256" xml:space="preserve"><value>SHA-256</value></data>
+  <data name="CmsSignatureOptional" xml:space="preserve"><value>CMS-подпись (.p7s, необязательно)</value></data>
+  <data name="CmsSigned" xml:space="preserve"><value>CMS</value></data>
+  <data name="CmsSignatureRequired" xml:space="preserve"><value>Требуется CMS-подпись пакета.</value></data>
+  <data name="CmsSignatureFailed" xml:space="preserve"><value>Проверка или подпись пакета не удалась.</value></data>
+  <data name="ReleaseUploadedSigned" xml:space="preserve"><value>Релиз загружен с CMS-подписью.</value></data>
+  <data name="ReleaseUploadedUnsigned" xml:space="preserve"><value>Релиз загружен (без CMS-подписи).</value></data>
+  <data name="Yes" xml:space="preserve"><value>Да</value></data>
   <data name="TimeUtc" xml:space="preserve"><value>Время (UTC)</value></data>
   <data name="User" xml:space="preserve"><value>Пользователь</value></data>
   <data name="Machine" xml:space="preserve"><value>Компьютер</value></data>

@@ -79,6 +79,9 @@ public sealed class ReleasePackage : TimestampEntity
 
     public long PackageSize { get; set; }
 
+    /// <summary>Relative path to detached CMS/PKCS#7 signature (.p7s), when present.</summary>
+    public string? SignaturePath { get; set; }
+
     public string? ReleaseNotes { get; set; }
 
     public bool IsMandatory { get; set; }

@@ -23,6 +23,7 @@ Prefer secrets via environment variables (do not commit real keys):
 | Package storage | `Storage__RootPath` |
 | Admin AD groups | `Security__ADGroup`, `Security__DeveloperADGroup` |
 | Entra Graph sync (optional) | `DirectorySync__Entra__TenantId`, `DirectorySync__Entra__ClientId`, `DirectorySync__Entra__ClientSecret` |
+| Package CMS signing (optional) | `Signing__CertificateThumbprint`, Agent `Agent__TrustedCmsThumbprints` |
 
 In **Production**, the apps refuse to start when:
 
@@ -110,7 +111,7 @@ Serilog already writes console logs on the Server — ship them to your SIEM/fil
 
 ## Out of scope for this checklist
 
-Package signing beyond SHA-256, commercial contracts, and multi-tenant SaaS are covered in:
+Detached CMS package signing, commercial contracts, and multi-tenant SaaS are covered in:
 
 - [Package signing](package-signing.md)
 - [Commercial support](commercial-support.md)

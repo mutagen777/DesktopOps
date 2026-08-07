@@ -37,11 +37,12 @@ Production: set both keys via env (`Security__ApiKey`, `Security__AdminApiKey`) 
 | POST | `/api/groups/{groupId}/members` | Add member (`userName`, `windowsSid?`) |
 | POST | `/api/assignments` | Assign program to group |
 | GET | `/api/releases` | List releases |
-| POST | `/api/releases` | Multipart upload (`programId`, `version`, `package`, `releaseNotes?`, `isMandatory?`) |
+| POST | `/api/releases` | Multipart upload (`programId`, `version`, `package`, `signature?`, `releaseNotes?`, `isMandatory?`) |
 | POST | `/api/releases/{id}/publish` | Publish release |
 | GET | `/api/rollouts` | Recent deployment events |
 
-Upload response includes `packageHash` (SHA-256 hex), `packageSize`, and `rolloutPercent`.
+Upload response includes `packageHash` (SHA-256 hex), `packageSize`, `signaturePath?`, and `rolloutPercent`.
+Optional CMS signing: form file `signature` (`.p7s`) and/or server `Signing:CertificateThumbprint` — see [Package signing](package-signing.md).
 
 Staged rollout details: [Staged rollouts](staged-rollouts.md).
 
@@ -54,7 +55,8 @@ Staged rollout details: [Staged rollouts](staged-rollouts.md).
 | GET | `/api/clients/{id}/assignments` | Assigned programs with latest published release |
 | GET | `/api/clients/{id}/updates?programSlug=` | Published releases for one program |
 | POST | `/api/clients/{id}/events` | Report deployment status |
-| GET | `/api/packages/{releaseId}` | Download package bytes |
+| GET | `/api/packages/{releaseId}` | Download package bytes (`?clientId=` required for agent key) |
+| GET | `/api/packages/{releaseId}/signature` | Download detached CMS `.p7s` (same auth rules; 404 if unsigned) |
 
 ### Register body
 
@@ -86,7 +88,8 @@ Embedded apps set their own product slug.
     "isMandatory": false,
     "packageHash": "abc123...",
     "packageSize": 12345,
-    "packageUrl": "/api/packages/..."
+    "packageUrl": "/api/packages/...?clientId=...",
+    "signatureUrl": "/api/packages/.../signature?clientId=..."
   }
 }
 ```

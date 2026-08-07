@@ -29,4 +29,13 @@ public sealed class UpdateOptions
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "DesktopOps",
         "Programs");
+
+    /// <summary>
+    /// Comma-separated certificate thumbprints trusted for detached CMS package signatures.
+    /// When empty, a present signature is still cryptographically verified but any valid signer is accepted.
+    /// </summary>
+    public string? TrustedCmsThumbprints { get; set; }
+
+    /// <summary>When true, releases without a signature URL are rejected after download.</summary>
+    public bool RequirePackageCmsSignature { get; set; }
 }

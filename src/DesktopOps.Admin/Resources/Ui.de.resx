@@ -77,6 +77,13 @@
   <data name="Rollout" xml:space="preserve"><value>Rollout</value></data>
   <data name="Publish" xml:space="preserve"><value>Veröffentlichen</value></data>
   <data name="Sha256" xml:space="preserve"><value>SHA-256</value></data>
+  <data name="CmsSignatureOptional" xml:space="preserve"><value>CMS-Signatur (.p7s, optional)</value></data>
+  <data name="CmsSigned" xml:space="preserve"><value>CMS</value></data>
+  <data name="CmsSignatureRequired" xml:space="preserve"><value>Eine CMS-Paketsignatur ist erforderlich.</value></data>
+  <data name="CmsSignatureFailed" xml:space="preserve"><value>Paketsignatur-Prüfung oder Signierung fehlgeschlagen.</value></data>
+  <data name="ReleaseUploadedSigned" xml:space="preserve"><value>Release mit CMS-Signatur hochgeladen.</value></data>
+  <data name="ReleaseUploadedUnsigned" xml:space="preserve"><value>Release hochgeladen (ohne CMS-Signatur).</value></data>
+  <data name="Yes" xml:space="preserve"><value>Ja</value></data>
   <data name="TimeUtc" xml:space="preserve"><value>Zeit (UTC)</value></data>
   <data name="User" xml:space="preserve"><value>Benutzer</value></data>
   <data name="Machine" xml:space="preserve"><value>Rechner</value></data>

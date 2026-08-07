@@ -43,7 +43,10 @@ internal sealed class AgentHost : IDisposable
                     MachineName = Environment.MachineName,
                     InstallationDirectory = installDir,
                     CurrentVersion = typeof(AgentHost).Assembly.GetName().Version ?? new Version(0, 3, 0),
-                    ApiKey = agentSection["ApiKey"]
+                    ApiKey = agentSection["ApiKey"],
+                    TrustedCmsThumbprints = agentSection["TrustedCmsThumbprints"],
+                    RequirePackageCmsSignature = bool.TryParse(agentSection["RequirePackageCmsSignature"], out var requireCms)
+                        && requireCms
                 };
 
                 var diagnosticsOptions = new DiagnosticsOptions

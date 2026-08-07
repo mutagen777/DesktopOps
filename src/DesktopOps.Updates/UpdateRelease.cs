@@ -15,4 +15,7 @@ public sealed class UpdateRelease
     public string PackageHash { get; set; } = string.Empty;
 
     public long PackageSize { get; set; }
+
+    /// <summary>Optional URL for the detached CMS signature (.p7s).</summary>
+    public string? SignatureUrl { get; set; }
 }

@@ -136,6 +136,8 @@ public sealed class UpdateService : IUpdateService
             }
         }
 
+        await VerifyCmsSignatureAsync(release, targetPath, cancellationToken);
+
         await ReportStatusAsync(release.Id, DeploymentStatus.Available, "Download completed.", cancellationToken: cancellationToken);
 
         return new PreparedUpdatePackage
@@ -144,6 +146,82 @@ public sealed class UpdateService : IUpdateService
             Release = release,
             PackagePath = targetPath
         };
+    }
+
+    private async Task VerifyCmsSignatureAsync(
+        UpdateRelease release,
+        string packagePath,
+        CancellationToken cancellationToken)
+    {
+        var hasSignatureUrl = !string.IsNullOrWhiteSpace(release.SignatureUrl);
+        if (!hasSignatureUrl)
+        {
+            if (Options.RequirePackageCmsSignature)
+            {
+                await ReportStatusAsync(
+                    release.Id,
+                    DeploymentStatus.Failed,
+                    "Package signature missing.",
+                    cancellationToken: cancellationToken);
+                throw new InvalidOperationException("Package CMS signature is required but was not provided by the server.");
+            }
+
+            return;
+        }
+
+        HashSet<string> trusted;
+        try
+        {
+            trusted = PackageCmsVerifier.ParseTrustedThumbprints(Options.TrustedCmsThumbprints);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            await ReportStatusAsync(
+                release.Id,
+                DeploymentStatus.Failed,
+                "Package signature verification failed.",
+                cancellationToken: cancellationToken);
+            throw new InvalidOperationException("Trusted CMS thumbprint configuration is invalid.", ex);
+        }
+
+        if (Options.RequirePackageCmsSignature && trusted.Count == 0)
+        {
+            await ReportStatusAsync(
+                release.Id,
+                DeploymentStatus.Failed,
+                "Package signature verification failed.",
+                cancellationToken: cancellationToken);
+            throw new InvalidOperationException(
+                "TrustedCmsThumbprints must be configured when RequirePackageCmsSignature is true.");
+        }
+
+        var signatureUri = new Uri(release.SignatureUrl!, UriKind.RelativeOrAbsolute);
+        if (!signatureUri.IsAbsoluteUri)
+        {
+            signatureUri = new Uri(_httpClient.BaseAddress!, signatureUri);
+        }
+
+        var signaturePath = packagePath + ".p7s";
+        await using (var sourceStream = await _httpClient.GetStreamAsync(signatureUri, cancellationToken))
+        await using (var targetStream = File.Create(signaturePath))
+        {
+            await sourceStream.CopyToAsync(targetStream, cancellationToken);
+        }
+
+        try
+        {
+            var signatureBytes = await File.ReadAllBytesAsync(signaturePath, cancellationToken);
+            PackageCmsVerifier.VerifyDetachedSignature(packagePath, signatureBytes, trusted);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            await ReportStatusAsync(
+                release.Id,
+                DeploymentStatus.Failed,
+                "Package signature verification failed.",
+                cancellationToken: cancellationToken);
+            throw new InvalidOperationException("Downloaded package CMS signature verification failed.", ex);
+        }
     }
 
     public async Task ReportStatusAsync(
