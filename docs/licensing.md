@@ -8,7 +8,8 @@
 | **Team** | As licensed (e.g. 25 / 50 / 100) | Unlimited |
 | **Enterprise** | Custom / unlimited (`maxSeats: -1`) | Unlimited |
 
-A **seat** is a unique person (`UserGroupMember`) in a group that has at least one **program assignment**.  
+A **seat** is a unique person in a group that has at least one **program assignment**.  
+Identity prefers **Windows SID** when present (stable across username formats); otherwise normalized user name.  
 Machines, clients, and number of programs per person do **not** count.
 
 ## Enforcement

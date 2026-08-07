@@ -13,7 +13,7 @@ param(
     [ValidateSet("community", "team", "enterprise")]
     [string] $Tier = "team",
 
-    [int] $MaxSeats = 25,
+    [int] $MaxSeats = -1,
 
     [string] $Customer = "Customer",
 
@@ -27,6 +27,12 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $PSBoundParameters.ContainsKey('MaxSeats')) {
+    if ($Tier -eq 'community') { $MaxSeats = 3 }
+    elseif ($Tier -eq 'team') { $MaxSeats = 25 }
+    else { $MaxSeats = -1 }
+}
 $toolsDir = Join-Path $PSScriptRoot "licensing"
 New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
 

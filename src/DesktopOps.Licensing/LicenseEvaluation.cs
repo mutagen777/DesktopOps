@@ -81,7 +81,7 @@ public static class LicenseEvaluator
         }
 
         LicenseCrypto.NormalizeClaims(claims);
-        var expired = claims.ValidUntilUtc is { } until && until < now;
+        var expired = claims.ValidUntilUtc is { } until && IsExpired(until, now);
         var isCommunity = string.Equals(claims.Tier, LicenseTiers.Community, StringComparison.OrdinalIgnoreCase);
         var maxSeats = LicenseCrypto.IsUnlimited(claims.MaxSeats)
             ? null
@@ -92,14 +92,14 @@ public static class LicenseEvaluator
             maxSeats = LicenseDefaults.CommunityMaxSeats;
         }
 
-        // Paid tiers that are expired or missing seats block mutations; community stays soft.
+        // Paid tiers that are expired block mutations; community stays soft.
         var blocks = !isCommunity && expired;
 
         return new LicenseEvaluation
         {
             Tier = claims.Tier,
             Customer = claims.Customer,
-            LicenseId = claims.LicenseId,
+            LicenseId = claims.LicenseId == Guid.Empty ? null : claims.LicenseId,
             ValidUntilUtc = claims.ValidUntilUtc,
             MaxSeats = maxSeats,
             UsedSeats = usedSeats,
@@ -109,5 +109,17 @@ public static class LicenseEvaluator
             ErrorMessage = expired ? "License has expired." : null,
             BlocksMutations = blocks
         };
+    }
+
+    /// <summary>
+    /// Midnight UTC dates are treated as inclusive end-of-day (valid through that calendar day).
+    /// Explicit times expire at the exact instant.
+    /// </summary>
+    public static bool IsExpired(DateTimeOffset validUntilUtc, DateTimeOffset utcNow)
+    {
+        var deadline = validUntilUtc.TimeOfDay == TimeSpan.Zero
+            ? validUntilUtc.AddDays(1)
+            : validUntilUtc;
+        return utcNow >= deadline;
     }
 }

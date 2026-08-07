@@ -13,12 +13,13 @@ public static class LicenseTiers
 /// <summary>Claims inside a signed DesktopOps license file.</summary>
 public sealed class LicenseClaims
 {
-    public Guid LicenseId { get; set; } = Guid.NewGuid();
+    /// <summary>Stable license id. Default empty — callers/issuers must set explicitly before signing.</summary>
+    public Guid LicenseId { get; set; }
 
     public string Tier { get; set; } = LicenseTiers.Community;
 
-    /// <summary>Maximum unique seats. Null or negative means unlimited.</summary>
-    public int? MaxSeats { get; set; } = LicenseDefaults.CommunityMaxSeats;
+    /// <summary>Maximum unique seats. Null or negative means unlimited. No default — omit in JSON for unlimited.</summary>
+    public int? MaxSeats { get; set; }
 
     public string Customer { get; set; } = string.Empty;
 

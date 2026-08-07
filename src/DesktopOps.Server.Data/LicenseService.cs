@@ -8,7 +8,7 @@ public static class SeatCounter
 {
     /// <summary>
     /// Distinct seats: members of groups that have at least one program assignment.
-    /// Identity key is normalized user name, or Windows SID when the name is empty.
+    /// Prefers Windows SID when present (stable person id); otherwise normalized user name.
     /// </summary>
     public static async Task<int> CountAssignedSeatsAsync(
         DesktopOpsDbContext dbContext,
@@ -33,17 +33,20 @@ public static class SeatCounter
         return keys.Count;
     }
 
-    /// <summary>Builds a stable seat identity key.</summary>
+    /// <summary>
+    /// Builds a stable seat identity key. SID wins when present so DOMAIN\user and user
+    /// with the same SID count as one person.
+    /// </summary>
     public static string NormalizeSeatKey(string? userName, string? windowsSid)
     {
-        if (!string.IsNullOrWhiteSpace(userName))
-        {
-            return "u:" + userName.Trim().ToLowerInvariant();
-        }
-
         if (!string.IsNullOrWhiteSpace(windowsSid))
         {
             return "s:" + windowsSid.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            return "u:" + userName.Trim().ToLowerInvariant();
         }
 
         return string.Empty;

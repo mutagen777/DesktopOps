@@ -84,7 +84,7 @@ public static class LicenseCrypto
         return document.Payload;
     }
 
-    /// <summary>Normalizes tier casing and seat defaults.</summary>
+    /// <summary>Normalizes tier casing and customer text. Does not invent license IDs.</summary>
     public static void NormalizeClaims(LicenseClaims claims)
     {
         ArgumentNullException.ThrowIfNull(claims);
@@ -92,10 +92,6 @@ public static class LicenseCrypto
             ? LicenseTiers.Community
             : claims.Tier.Trim().ToLowerInvariant();
         claims.Customer = claims.Customer?.Trim() ?? string.Empty;
-        if (claims.LicenseId == Guid.Empty)
-        {
-            claims.LicenseId = Guid.NewGuid();
-        }
     }
 
     /// <summary>True when max seats means unlimited.</summary>
