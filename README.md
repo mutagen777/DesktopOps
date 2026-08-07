@@ -116,11 +116,12 @@ Included:
 
 Not included yet:
 
-- Scheduled / Entra ID (Graph) sync of end-user groups
+- Entra ID (Graph) sync of end-user groups
 - multi-tenant isolation
 - delta updates
 - Authenticode / signed packages (SHA-256 hash verification is included)
 
+Scheduled AD/Windows group sync is supported — see [Directory group sync](docs/directory-sync.md).
 Agent installer packaging via Velopack is supported — see [Agent installer](docs/agent-installer.md).
 Production hardening checklist: [Production hardening](docs/production-hardening.md).
 

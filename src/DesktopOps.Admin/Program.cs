@@ -36,6 +36,10 @@ var security = builder.Configuration.GetSection(SecurityOptions.SectionName).Get
 builder.Services.AddSingleton(security);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.Configure<DirectorySyncOptions>(
+    builder.Configuration.GetSection(DirectorySyncOptions.SectionName));
+builder.Services.AddSingleton<DirectoryGroupSyncService>();
+builder.Services.AddHostedService<DesktopOps.Admin.Services.DirectorySyncHostedService>();
 if (OperatingSystem.IsWindows())
 {
     builder.Services.AddSingleton<IDirectoryAccountLookup, WindowsDirectoryAccountLookup>();

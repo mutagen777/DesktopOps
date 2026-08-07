@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @inject IDbContextFactory<DesktopOpsDbContext> DbFactory
 @inject IDirectoryAccountLookup DirectoryLookup
+@inject DirectoryGroupSyncService DirectorySync
 
 <PageTitle>@L["Nav_Groups"]</PageTitle>
 
@@ -193,48 +194,19 @@
             return;
         }
 
-        var accounts = DirectoryLookup.GetGroupMembers(adGroupName);
-        if (accounts.Count == 0)
+        var result = await DirectorySync.SyncGroupAsync(groupId, adGroupName);
+        if (result.Error is not null)
         {
-            statusMessage = L["NoMembersInAd", adGroupName];
+            statusMessage = result.DirectoryMemberCount == 0 && result.Error.Contains("No members", StringComparison.OrdinalIgnoreCase)
+                ? L["NoMembersInAd", adGroupName]
+                : result.Error.Contains("Directory services", StringComparison.OrdinalIgnoreCase)
+                    ? L["DirectoryWindowsOnly"]
+                    : result.Error;
             return;
         }
 
-        await using var dbContext = await DbFactory.CreateDbContextAsync();
-        var group = await dbContext.UserGroups
-            .Include(static item => item.Members)
-            .FirstAsync(item => item.Id == groupId);
-
-        group.ActiveDirectoryGroup = adGroupName.Trim();
-        var existing = group.Members.ToDictionary(static item => item.UserName, StringComparer.OrdinalIgnoreCase);
-        var added = 0;
-        var updated = 0;
-
-        foreach (var account in accounts)
-        {
-            if (existing.TryGetValue(account.UserName, out var member))
-            {
-                if (string.IsNullOrWhiteSpace(member.WindowsSid) && !string.IsNullOrWhiteSpace(account.WindowsSid))
-                {
-                    member.WindowsSid = account.WindowsSid;
-                    updated++;
-                }
-
-                continue;
-            }
-
-            group.Members.Add(new UserGroupMember
-            {
-                UserGroupId = groupId,
-                UserName = account.UserName,
-                WindowsSid = account.WindowsSid
-            });
-            added++;
-        }
-
-        await dbContext.SaveChangesAsync();
-        pendingAdGroups[groupId] = adGroupName.Trim();
-        statusMessage = L["AdSyncResult", adGroupName, added, updated, accounts.Count];
+        pendingAdGroups[groupId] = result.AdGroupName;
+        statusMessage = L["AdSyncResult", result.AdGroupName, result.Added, result.Updated, result.DirectoryMemberCount];
         await LoadAsync();
     }
 
